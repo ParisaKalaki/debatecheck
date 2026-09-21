@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+pydantic
+
+biopython
+sentence-transformers
+faiss-cpu
+
+scikit-learn
+pandas
+
+anthropic
+google-generativeai
+
+python-dotenv

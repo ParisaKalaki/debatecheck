@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+*.egg-info/
+
+# Environment / secrets
+.env
+.env.local
+*.key
+
+# Data (large / generated — don't commit)
+evaluation/data/*.csv
+evaluation/data/*.tsv
+evaluation/data/raw/
+evaluation/results/*.json
+!evaluation/data/.gitkeep
+!evaluation/results/.gitkeep
+
+# FAISS / vector store indexes
+*.index
+*.faiss
+
+# IDE
+.vscode/
+.idea/
+*.DS_Store
+
+# Node (frontend, if React)
+node_modules/
+frontend/build/
+
+# Streamlit
+.streamlit/secrets.toml
