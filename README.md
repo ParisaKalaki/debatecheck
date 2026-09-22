@@ -32,3 +32,11 @@ pip install -r backend/requirements.txt
 ## Status
 
 In development — AT2 due 14 October 2026.
+
+## Progress Log
+
+- Evidence retrieval pipeline (PubMed search, fetch, relevance filtering, 
+  snippet chunking, quality metadata, stance classification) — DONE
+- Traditional NLP baseline (pretrained NLI + majority vote) — DONE
+- Entry point for other components: `get_evidence_for_claim(claim)` in 
+  `backend/app/retrieval/evidence_pipeline.py`

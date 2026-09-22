@@ -5,11 +5,12 @@ pydantic
 biopython
 sentence-transformers
 faiss-cpu
+google-genai
+python-dotenv
 
 scikit-learn
 pandas
+transformers
+torch
 
 anthropic
-google-generativeai
-
-python-dotenv
