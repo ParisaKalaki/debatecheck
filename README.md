@@ -42,11 +42,45 @@ evidence = get_evidence_for_claim("vitamin D supplements prevent respiratory inf
 
 Returns a list of `EvidenceSnippet` objects (id, text, stance, study_design, sample_size, pub_date, source_credibility, source_url).
 
-Internally: searches PubMed → filters irrelevant papers → chunks abstracts into snippets → tags each with study design/sample size/credibility (from PubMed's own metadata, falling back to regex) → classifies each as support/contradict/neutral via Gemini.
+### Example: Evidence Retrieval Pipeline
 
-**Traditional baseline** (`backend/app/baseline/nli_classifier.py`) — pretrained zero-shot NLI model + majority vote, no LLM. This is the "traditional" comparison point against the agentic system.
+```text
+Claim
+"Vitamin D supplements prevent respiratory infections."
+        ↓
+PubMed search
+Sends the claim as a search query → returns PubMed IDs (PMIDs)
+Example: ["42235406", "42143317", "42124073", ...]
+        ↓
+Potentially relevant papers
+Candidate papers returned by PubMed
+Example: papers about vitamin D + respiratory infections
+        ↓
+Fetch abstracts + PubMed metadata
+Gets title, abstract, publication date, and study type
+Example: "Systematic Review", "RCT", etc.
+        ↓
+Relevance filter
+Checks whether the paper matches the claim
+Example: vitamin D + respiratory infection → keep
+         vitamin D + osteoporosis → remove
+        ↓
+Evidence snippets
+Splits relevant abstracts into small pieces
+Example: "Vitamin D supplementation reduces respiratory infections..."
+        ↓
+Study design / sample size / credibility
+Adds information about the evidence
+Example: systematic review | 31,521 participants | high
+        ↓
+Gemini
+Classifies each snippet
+Example: support / contradict / neutral
+```
 
-**Shared schema** (`backend/app/core/schemas.py`) — `EvidenceSnippet`, `DebateTurn`, `JudgeVerdict` — import these instead of building your own dicts.
+**Traditional baseline** (`backend/app/baseline/nli_classifier.py`) — uses a pretrained NLI model to classify each evidence snippet as support, contradict, or neutral, then combines the results using a simple majority vote. No LLM prompting or agents are used. This provides a simple traditional comparison point for the agentic system.
+
+**Shared schema** (`backend/app/core/schemas.py`) — defines common data structures such as `EvidenceSnippet`, `DebateTurn`, and `JudgeVerdict`, so all components use the same format when passing information between them.
 
 ## Not yet started
 
