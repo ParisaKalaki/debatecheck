@@ -1,0 +1,442 @@
+[
+  {
+    "id": "E-42270958-0",
+    "text": "Vitamin D has been implicated in modulating immune responses to COVID-19 and anti-SARS-CoV-2 vaccination. However, whether chronic cholecalciferol supplementation influences the risk of post-vaccination breakthrough infection remains unclear.",
+    "stance": "neutral",
+    "study_design": "observational",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "medium",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42270958/"
+  },
+  {
+    "id": "E-42270958-1",
+    "text": "This retrospective observational study investigated the role of chronic vitamin D supplementation and circulating 25(OH) vitamin D concentrations on SARS-CoV-2 breakthrough infection after mRNA vaccination. Adult patients vaccinated with two doses of BNT162b2 and without prior SARS-CoV-2 infection were included.",
+    "stance": "neutral",
+    "study_design": "observational",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "medium",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42270958/"
+  },
+  {
+    "id": "E-42270958-2",
+    "text": "Individuals chronically supplemented with cholecalciferol were compared with non-supplemented subjects and subsequently matched 1:1 for age, sex, and comorbidities. Breakthrough infection within 12 months after vaccination was recorded.",
+    "stance": "neutral",
+    "study_design": "observational",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "medium",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42270958/"
+  },
+  {
+    "id": "E-42270958-3",
+    "text": "A total of 114 patients were evaluated; 70 (61.4%) received chronic cholecalciferol supplementation and 27 (23.7%) developed breakthrough infection. Infection occurred less frequently among supplemented patients (17% vs.",
+    "stance": "neutral",
+    "study_design": "observational",
+    "sample_size": 114,
+    "pub_date": "2026",
+    "source_credibility": "medium",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42270958/"
+  },
+  {
+    "id": "E-42270958-4",
+    "text": "34%, p\u2009=\u20090.044). Circulating 25(OH) vitamin D concentrations were significantly lower in patients with infection (p\u2009<\u20090.001) and showed a significant predictive performance (AUROC 75.6%, p\u2009<\u20090.001), with an optimal cut-off of 18.5 ng/mL.",
+    "stance": "neutral",
+    "study_design": "observational",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "medium",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42270958/"
+  },
+  {
+    "id": "E-42270958-5",
+    "text": "In multivariable analysis, 25(OH) vitamin D concentrations emerged as the only independent predictor of breakthrough infection (OR 0.86, p\u2009=\u20090.003). In the matched cohort (n\u2009=\u200978), breakthrough infection remained numerically lower among supplemented individuals (18% vs.",
+    "stance": "neutral",
+    "study_design": "observational",
+    "sample_size": 78,
+    "pub_date": "2026",
+    "source_credibility": "medium",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42270958/"
+  },
+  {
+    "id": "E-42270958-6",
+    "text": "36%, p\u2009=\u20090.125); lower 25(OH) vitamin D concentrations were independently associated with infection risk (OR 0.88, p\u2009=\u20090.007), with similar ROC performance (AUROC 77%, p\u2009<\u20090.001). Adequate vitamin D status, predominantly achieved through chronic cholecalciferol supplementation, was independently associated with reduced risk of SARS-CoV-2 breakthrough infection after vaccination.",
+    "stance": "neutral",
+    "study_design": "observational",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "medium",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42270958/"
+  },
+  {
+    "id": "E-42270958-7",
+    "text": "Maintaining sufficient 25(OH) vitamin D concentrations may represent a simple and potentially relevant strategy to optimize post-vaccination protection.",
+    "stance": "neutral",
+    "study_design": "observational",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "medium",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42270958/"
+  },
+  {
+    "id": "E-42235406-0",
+    "text": "Falls in nursing home are a major problem, since risk factors for falls (such as muscular weakness, cognitive impairment, osteoporosis, balance and gait problems etc.) are more prevalent in this population than in community-dwelling individuals. Guidelines suggest that elderly people should be treated with vitamin D the whole year.",
+    "stance": "neutral",
+    "study_design": "observational",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "medium",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42235406/"
+  },
+  {
+    "id": "E-42235406-1",
+    "text": "In Nursing Homes vitamin D supplementation reduces falls, osteoporosis and respiratory infections, but it is undertreated in this environment. The main objective of this study was to see if there was any association between vitamin D supplementation and the frequency of falls in elderly people living in nursing homes in Andaluc\u00eda, Spain.",
+    "stance": "support",
+    "study_design": "observational",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "medium",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42235406/"
+  },
+  {
+    "id": "E-42235406-2",
+    "text": "And, as a secondary objective, we wanted to see if there was association between the dosage of vitamin D and falls. This is a multicenter, observational, retrospective, cross-sectional, and analytic study with elderly individuals residing in nursing homes in 2023.",
+    "stance": "neutral",
+    "study_design": "observational",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "medium",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42235406/"
+  },
+  {
+    "id": "E-42235406-3",
+    "text": "961 participants were included. Only 38.4% of the residents where receiving vitamin D supplementation.",
+    "stance": "neutral",
+    "study_design": "observational",
+    "sample_size": 961,
+    "pub_date": "2026",
+    "source_credibility": "medium",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42235406/"
+  },
+  {
+    "id": "E-42235406-4",
+    "text": "Most of them (60%) where taking cholecalciferol, 35% calcifediol, and only 5% where on combination of vitamin D with calcium. The supplement with the lowest association to falls was cholecalciferol (34.7%) (p value 0.05), and those residents taking cholecalciferol weekly where the ones with less falls (28.67%) (p value 0.02).",
+    "stance": "neutral",
+    "study_design": "observational",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "medium",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42235406/"
+  },
+  {
+    "id": "E-42235406-5",
+    "text": "Nursing home residents were undertreated with vitamin D, the dosage with the lowest association with falls was cholecalciferol weekly.",
+    "stance": "neutral",
+    "study_design": "observational",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "medium",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42235406/"
+  },
+  {
+    "id": "E-42143317-0",
+    "text": "This study employs a network meta-analysis to compare the effectiveness of multiple nutritional supplements in preventing childhood respiratory infections. Systematically searched PubMed, Embase, Cochrane Library, Web of Science from their inception to 1 September 2025.",
+    "stance": "neutral",
+    "study_design": "systematic_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "high",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42143317/"
+  },
+  {
+    "id": "E-42143317-1",
+    "text": "Included studies were randomized controlled trials evaluating nutritional supplements for preventing respiratory infections in children under 18 years old. The primary outcome was the incidence of respiratory infections.",
+    "stance": "neutral",
+    "study_design": "systematic_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "high",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42143317/"
+  },
+  {
+    "id": "E-42143317-2",
+    "text": "Traditional meta-analysis and Bayesian network meta-analysis were conducted using random-effects models to calculate odds ratios (OR) and their 95% credible intervals (CrI). The cumulative sorted rank curve area (SUCRA) was used to rank the efficacy of each intervention.",
+    "stance": "neutral",
+    "study_design": "systematic_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "high",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42143317/"
+  },
+  {
+    "id": "E-42143317-3",
+    "text": "The Cochrane risk of bias tool was applied to assess the quality of included studies. A total of 19 articles involving 11,576 children were included.",
+    "stance": "neutral",
+    "study_design": "systematic_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "high",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42143317/"
+  },
+  {
+    "id": "E-42143317-4",
+    "text": "Direct comparison meta-analysis showed no statistically significant differences between low-dose vitamin D, vitamin A, vitamin A combined with zinc, zinc, and placebo. Network meta-analysis formed a closed-loop network, and local inconsistency tests revealed no significant differences in either direct or indirect comparisons.",
+    "stance": "contradict",
+    "study_design": "systematic_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "high",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42143317/"
+  },
+  {
+    "id": "E-42143317-5",
+    "text": "The league table indicated a trend toward reduced risk of childhood respiratory infections with high-dose vitamin D (HVD) compared to placebo [OR\u2009=\u20090.76, 95% CrI (0.61, 0.94)]. The cumulative ordered probability (SUCRA) for each intervention was: HVD (82.44%)\u2009>\u2009LVD (64.81%) > Iron (57.2%) > VA_Zinc (54.56%) > Probiotics (52.49%) > Zinc (42.5%)\u2009>\u2009VA (23.31%).",
+    "stance": "support",
+    "study_design": "systematic_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "high",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42143317/"
+  },
+  {
+    "id": "E-42143317-6",
+    "text": "This study indicates that among the various nutritional interventions included, HVD demonstrated the greatest potential effect in preventing respiratory infections in children. Direct comparison meta-analyses revealed no statistically significant differences between LVD, VA, VA_Zinc, zinc, and placebo.",
+    "stance": "support",
+    "study_design": "systematic_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "high",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42143317/"
+  },
+  {
+    "id": "E-42143317-7",
+    "text": "A network meta-analysis further supported these findings, with league table and SUCRA rankings indicating HVD may offer the optimal efficacy among all interventions. Not applicable.",
+    "stance": "support",
+    "study_design": "systematic_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "high",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42143317/"
+  },
+  {
+    "id": "E-42124073-0",
+    "text": "An Endocrine Society Clinical Practice Guideline on vitamin D was published in 2024. Its main objective was the use of vitamin D to lower the risk of disease in individuals without established indications for vitamin D treatment or 25-hydroxavitamin D (25(OH)D) testing.",
+    "stance": "neutral",
+    "study_design": "systematic_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "high",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42124073/"
+  },
+  {
+    "id": "E-42124073-1",
+    "text": "The methodology followed the Grading of Recommendations, Assessment, Development, and Evaluation (GRADE) and the Evidence-to-Decision (EtD) framework. Evidence from randomized controlled trials (RCTs) retrieved by a systematic review was prioritized to inform this guideline.",
+    "stance": "neutral",
+    "study_design": "systematic_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "high",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42124073/"
+  },
+  {
+    "id": "E-42124073-2",
+    "text": "It was concluded that vitamin D supplementation reduces rickets and respiratory tract infections in children, mortality in individuals aged 75 years or older, pregnancy complications (outcomes), and progression of prediabetes to diabetes mellitus. Consequently, empiric vitamin D supplementation was recommended for individuals aged 1 to 18 years and \u226575 years, pregnant women, and individuals with prediabetes.",
+    "stance": "support",
+    "study_design": "systematic_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "high",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42124073/"
+  },
+  {
+    "id": "E-42124073-3",
+    "text": "Empiric vitamin D supplementation is defined as a vitamin D intake that exceeds the Dietary Reference Intakes (DRIs) and is implemented without 25(OH)D testing. This article provides a comprehensive guideline summary and critical appraisal based on a narrative review on scientific publications regarding that guideline.",
+    "stance": "neutral",
+    "study_design": "systematic_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "high",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42124073/"
+  },
+  {
+    "id": "E-42124073-4",
+    "text": "Several publications discussed the 2024 Endocrine Society Clinical Practice Guideline on vitamin D. The main criticisms and discussion relate to unclear vitamin D dosages, guideline applicability to certain populations including controversy with previous vitamin D guidelines, and the implications of 25(OH)D testing.",
+    "stance": "neutral",
+    "study_design": "systematic_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "high",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42124073/"
+  },
+  {
+    "id": "E-42124073-5",
+    "text": "The 2024 Endocrine Society Clinical Practice Guideline on vitamin D followed a rigorous methodological approach with high quality standards but it leaves many open questions and uncertainties warranting clarification.",
+    "stance": "neutral",
+    "study_design": "systematic_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "high",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42124073/"
+  },
+  {
+    "id": "E-42037591-0",
+    "text": "Acute respiratory infections (ARIs) are a leading cause of morbidity and mortality in children under five years of age and contribute to healthcare visits and hospitalisations globally. Vitamin D deficiency is common amongst pregnant women and young children.",
+    "stance": "neutral",
+    "study_design": "systematic_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "high",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42037591/"
+  },
+  {
+    "id": "E-42037591-1",
+    "text": "Given that vitamin D supplementation is safe, affordable, and easy to administer, its potential to reduce ARI-related healthcare visits holds substantial public health relevance. This review evaluates the benefit and harm of vitamin D supplementation in preventing ARI-related healthcare visits in young children, aiming to inform supplementation policies during pregnancy and early childhood.",
+    "stance": "neutral",
+    "study_design": "systematic_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "high",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42037591/"
+  },
+  {
+    "id": "E-42037591-2",
+    "text": "To determine the benefit and harm of vitamin D supplementation for preventing ARIs in children up to five years of age. We searched the Cochrane Central Register of Controlled Trials (CENTRAL), MEDLINE, Embase, CINAHL, Web of Science, WHO Global Index Medicus, and four clinical trial registries on 18 March 2025.",
+    "stance": "neutral",
+    "study_design": "systematic_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "high",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42037591/"
+  },
+  {
+    "id": "E-42037591-3",
+    "text": "We included randomised controlled trials (RCTs) comparing vitamin D to placebo, or a higher dose (\u2265 1000 IU) versus a lower dose (\u2264 1000 IU) administered from early pregnancy through to five years of age. We excluded studies involving children with chronic respiratory or systemic conditions.",
+    "stance": "neutral",
+    "study_design": "systematic_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "high",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42037591/"
+  },
+  {
+    "id": "E-42037591-4",
+    "text": "Critical outcomes: 1) healthcare visits made by children for an ARI: (a) the proportion of children with healthcare visits made for ARIs; (b) the mean number of healthcare visits made for ARIs per child; and 2) hypercalcaemia: the number of pregnant women and children with hypercalcaemia. We assessed risk of bias using the Cochrane risk of bias (RoB) 1 tool for outcomes reported in the summary of findings tables.",
+    "stance": "neutral",
+    "study_design": "systematic_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "high",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42037591/"
+  },
+  {
+    "id": "E-42037591-5",
+    "text": "We synthesised outcome data using meta-analyses, calculating risk ratios (RR) for dichotomous, and mean differences (MD) for continuous outcomes, each with 95% confidence intervals (CI). Where meta-analysis was not feasible, we summarised the results narratively.",
+    "stance": "neutral",
+    "study_design": "systematic_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "high",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42037591/"
+  },
+  {
+    "id": "E-42037591-6",
+    "text": "We used GRADE to assess the certainty of the evidence for pre-specified outcomes. We included 107 RCTs involving 31,521 participants.",
+    "stance": "neutral",
+    "study_design": "systematic_review",
+    "sample_size": 521,
+    "pub_date": "2026",
+    "source_credibility": "high",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42037591/"
+  },
+  {
+    "id": "E-42037591-7",
+    "text": "Vitamin D supplementation was administered during pregnancy, early childhood, or both, and in some cases to both infants and lactating mothers. Interventions used vitamin D2, D3, both, or unspecified forms, with dosages ranging from daily administration to large single or quarterly boluses.",
+    "stance": "neutral",
+    "study_design": "systematic_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "high",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42037591/"
+  },
+  {
+    "id": "E-42037591-8",
+    "text": "Most were delivered orally, typically on a daily schedule, but also weekly or quarterly, over durations ranging from a single dose to 18 months. Settings included hospitals, day-care centres, communities, and homes.",
+    "stance": "neutral",
+    "study_design": "systematic_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "high",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42037591/"
+  },
+  {
+    "id": "E-42037591-9",
+    "text": "Vitamin D supplementation may result in a slight reduction in the proportion of children who make ARI-related healthcare visits compared to placebo (risk ratio (RR) 0.95, 95% confidence interval (CI) 0.91 to 1.00; P = 0.03; 10 studies, 2447 participants; low-certainty evidence), but probably does not reduce the mean number of ARI-related healthcare visits per child (mean difference (MD) 0.07, 95% CI -0.06 to 0.20; P = 0.32; 3 studies, 561 participants; moderate-certainty evidence). Comparisons between higher and lower doses of vitamin D probably do not reduce the proportion of children making ARI-related healthcare visits (RR 0.94, 95% CI 0.81 to 1.10; P = 0.46; 2 studies, 1382 participants; moderate-certainty evidence), and do not reduce the mean number of ARI-related healthcare visits per child (MD -0.10, 95% CI -0.59 to 0.39; P = 0.69; 1 study, 579 participants; low-certainty evidence).",
+    "stance": "support",
+    "study_design": "systematic_review",
+    "sample_size": 2447,
+    "pub_date": "2026",
+    "source_credibility": "high",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42037591/"
+  },
+  {
+    "id": "E-42037591-10",
+    "text": "No cases of hypercalcaemia were reported among pregnant women in trials comparing vitamin D supplementation with placebo. In higher versus lower dose comparisons, supplementation may result in little to no difference in the risk of hypercalcaemia among pregnant women (RR 1.61, 95% CI 0.60 to 4.31; P = 0.34; 6 studies, 2379 participants; low-certainty evidence).",
+    "stance": "neutral",
+    "study_design": "systematic_review",
+    "sample_size": 2379,
+    "pub_date": "2026",
+    "source_credibility": "high",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42037591/"
+  },
+  {
+    "id": "E-42037591-11",
+    "text": "Similarly, the evidence that vitamin D supplementation has little to no effect on the risk of hypercalcaemia in children, when compared with placebo, is very uncertain (RR 0.81, 95% CI 0.53 to 1.24; 7 studies, 1542 participants; very low-certainty evidence) and may result in little to no difference in the risk of hypercalcaemia in children when higher doses are compared to lower doses (RR 1.23, 95% CI 0.82 to 1.85; 7 studies, 1287 participants; low-certainty evidence). We found low-certainty evidence that vitamin D supplementation during pregnancy or early childhood may result in a slight reduction in the proportion of children under five years of age who make ARI-related healthcare visits, but probably does not reduce the mean number of healthcare visits for ARIs per child.",
+    "stance": "support",
+    "study_design": "systematic_review",
+    "sample_size": 1542,
+    "pub_date": "2026",
+    "source_credibility": "high",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42037591/"
+  },
+  {
+    "id": "E-42037591-12",
+    "text": "This finding highlights the need for large, well-designed, placebo-controlled trials to confirm the potential benefit. We found moderate-certainty evidence that higher-dose vitamin D supplementation, compared with lower doses, probably does not reduce the proportion of children making healthcare visits for ARIs and does not reduce the mean number of ARI-related healthcare visits per child.",
+    "stance": "neutral",
+    "study_design": "systematic_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "high",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42037591/"
+  },
+  {
+    "id": "E-42037591-13",
+    "text": "Hypercalcaemia occurs infrequently in both pregnant women and children receiving vitamin D supplementation. Where hypercalcaemia could be measured, specifically in children receiving vitamin D versus placebo, vitamin D supplementation may have little to no effect on the risk of hypercalcaemia (very low-certainty evidence).",
+    "stance": "neutral",
+    "study_design": "systematic_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "high",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42037591/"
+  },
+  {
+    "id": "E-42037591-14",
+    "text": "In both children and pregnant women, a higher dose of vitamin D compared to a lower dose may result in little to no difference in the risk of hypercalcaemia (low-certainty evidence). This Cochrane review had no dedicated funding.",
+    "stance": "neutral",
+    "study_design": "systematic_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "high",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42037591/"
+  },
+  {
+    "id": "E-42037591-15",
+    "text": "Protocol (2022) DOI: 10.1002/14651858.CD015111.",
+    "stance": "neutral",
+    "study_design": "systematic_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "high",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/42037591/"
+  }
+]
