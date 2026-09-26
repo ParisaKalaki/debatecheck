@@ -7,6 +7,7 @@ Points with no valid citation are dropped before being joined into a DebateTurn.
 """
 
 import os
+import re
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -22,6 +23,9 @@ load_dotenv(dotenv_path=env_path)
 
 client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 MODEL = os.getenv("DEBATE_MODEL", "gemini-3.5-flash-lite")
+
+# Matches inline ID brackets like "[E-42143317-5]" or "[E-42143317-5, E-42143317-6]"
+INLINE_ID_PATTERN = re.compile(r"\s*\[\s*E-\d+-\d+(?:\s*,\s*E-\d+-\d+)*\s*\]")
 
 
 # ---------- Internal schemas (not shared with other components) ----------
@@ -59,7 +63,9 @@ Rules:
 3. Do not overstate evidence. If a study is observational, small, or its sample size is not stated, do not present it as definitive.
 4. Prioritise higher-quality evidence (systematic reviews, meta-analyses, RCTs, large samples).
 5. Use neutral snippets only if they genuinely help your side, and never misrepresent them.
-6. Give 2-4 concise points.
+6. Put snippet IDs ONLY in "cited_ids", never inside the point text.
+7. Describe certainty, effect size, and study quality exactly as the snippet states them (e.g. never turn "moderate-certainty" into "high-certainty").
+8. Give 2-4 concise points.
 
 Return JSON in this format:
 {{"points": [{{"text": "your point", "cited_ids": ["snippet_id"]}}]}}
@@ -85,7 +91,9 @@ Rules:
    wrong outcome, ignored study limitations or low quality). If so, say so and cite that snippet ID.
 3. Every point MUST cite at least one ID from YOUR EVIDENCE or EVIDENCE THE OPPONENT CITED. Points without a valid ID are discarded.
 4. Never invent studies, numbers, or findings not stated in the cited snippet.
-5. Give 2-3 concise points.
+5. Put snippet IDs ONLY in "cited_ids", never inside the point text.
+6. Describe certainty, effect size, and study quality exactly as the snippet states them (e.g. never turn "moderate-certainty" into "high-certainty").
+7. Give 2-3 concise points.
 
 Return JSON in this format:
 {{"points": [{{"text": "your point", "cited_ids": ["snippet_id"]}}]}}
@@ -134,13 +142,15 @@ def _call_llm(prompt: str, retries: int = 2) -> AgentOutput:
 
 
 def _enforce_citations(output: AgentOutput, allowed_ids: set[str]):
-    """Keep only valid IDs per point; drop points left with no valid ID."""
+    """Keep only valid IDs per point; drop points left with no valid ID.
+    Also strips any inline ID brackets the model put in the text (safety net)."""
     kept, dropped, invalid_ids = [], [], []
     for p in output.points:
         valid = [i for i in p.cited_ids if i in allowed_ids]
         invalid_ids.extend(i for i in p.cited_ids if i not in allowed_ids)
-        if valid and p.text.strip():
-            kept.append(Point(text=p.text.strip(), cited_ids=valid))
+        clean_text = INLINE_ID_PATTERN.sub("", p.text).strip()
+        if valid and clean_text:
+            kept.append(Point(text=clean_text, cited_ids=valid))
         else:
             dropped.append(p)
     return kept, dropped, invalid_ids

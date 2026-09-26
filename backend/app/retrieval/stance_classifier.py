@@ -23,57 +23,27 @@ STANCE_PROMPT_TEMPLATE = """You are classifying evidence snippets from medical r
 
 CLAIM: "{claim}"
 
-For each snippet, classify ONLY the evidence contained in that snippet.
+STEP 1 - Identify the two essential parts of the claim:
+1. Intervention/exposure (what is done, taken, or consumed)
+2. Outcome (the health effect the claim is about)
+
+STEP 2 - Classify each snippet using ONLY the evidence it contains.
 
 Labels:
-
-- "support" — the snippet provides evidence that directly supports the claim.
-- "contradict" — the snippet provides evidence that directly contradicts the claim.
-- "neutral" — the snippet is not directly about the claim, does not provide enough evidence, or discusses a different outcome.
+- "support": the snippet provides evidence that the claim is true.
+- "contradict": the snippet provides evidence that the claim is false (e.g. no effect, no significant difference, or the opposite effect).
+- "neutral": anything else.
 
 CRITICAL RULE:
-
-The claim has TWO essential parts:
-1. Intervention: vitamin D supplementation
-2. Outcome: prevention/reduction of respiratory infections
-
-A snippet must address BOTH parts to be "support" or "contradict".
-
-If the snippet discusses vitamin D but the outcome is something else, classify it as "neutral".
-
-Examples of outcomes that are NOT the target outcome:
-- hypercalcaemia
-- falls
-- osteoporosis
-- mortality
-- rickets
-- COVID-19
-- safety/adverse effects
-- vitamin D levels
-- other diseases or conditions
-
-For example:
-"Vitamin D supplementation has little to no effect on hypercalcaemia"
-→ neutral
-
-"Vitamin D supplementation reduces respiratory infections"
-→ support
-
-"Vitamin D supplementation has little or no effect on respiratory infections"
-→ contradict
+A snippet must address BOTH the claim's intervention AND its outcome to be "support" or "contradict".
+If it discusses the intervention but a different outcome (e.g. safety, side effects, biomarker levels, a different disease),
+or the outcome but a different intervention, classify it as "neutral".
 
 Other rules:
-
-1. Merely mentioning vitamin D supplementation is NOT enough.
-2. Merely mentioning respiratory infections is NOT enough.
-3. Background information is neutral.
-4. Study methodology is neutral.
-5. Participant descriptions are neutral.
-6. Judge ONLY the snippet itself.
-7. Do not infer the overall conclusion of the paper.
-8. Do not use information from other snippets.
-9. If the snippet reports no statistically significant effect on respiratory infections, classify it as contradict only when the result directly tests vitamin D supplementation against the respiratory-infection outcome.
-10. If the snippet is ambiguous or lacks enough information to determine the relationship between vitamin D supplementation and respiratory infections, classify it as neutral.
+1. Background information, study methodology, and participant descriptions are neutral.
+2. Judge ONLY the snippet itself. Do not infer the paper's overall conclusion or use other snippets.
+3. "No statistically significant effect" counts as "contradict" only if the snippet directly tests the claim's intervention against the claim's outcome.
+4. If the snippet is ambiguous or lacks enough information, classify it as neutral.
 
 Snippets:
 {snippets_text}
@@ -83,11 +53,13 @@ Respond ONLY with a valid JSON array, no markdown and no explanation.
 [{{"id": "snippet_id_here", "stance": "support"}}, {{"id": "snippet_id_here", "stance": "neutral"}}]
 """
 
+
 def is_relevant(paper: dict, claim_keywords: list[str]) -> bool:
     """Cheap relevance check — does the abstract mention claim-related keywords?"""
     text = (paper["title"] + " " + paper["abstract"]).lower()
     matches = [kw for kw in claim_keywords if kw.lower() in text]
     return len(matches) >= 1  # at least one keyword must appear
+
 
 def classify_snippets_stance(claim: str, snippets: list[dict]) -> list[dict]:
     if not snippets:
@@ -132,8 +104,8 @@ if __name__ == "__main__":
     # Filter out clearly irrelevant papers before spending tokens on them
     relevant_papers = [
         p for p in papers
-        if is_relevant(p)
-    ]    
+        if is_relevant(p, claim_keywords)
+    ]
     print(
         f"Retrieved {len(papers)} papers, "
         f"kept {len(relevant_papers)} relevant papers"

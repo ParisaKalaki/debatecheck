@@ -32,7 +32,7 @@
   {
     "id": "E-42270958-3",
     "text": "A total of 114 patients were evaluated; 70 (61.4%) received chronic cholecalciferol supplementation and 27 (23.7%) developed breakthrough infection. Infection occurred less frequently among supplemented patients (17% vs.",
-    "stance": "neutral",
+    "stance": "support",
     "study_design": "observational",
     "sample_size": 114,
     "pub_date": "2026",
@@ -62,7 +62,7 @@
   {
     "id": "E-42270958-6",
     "text": "36%, p\u2009=\u20090.125); lower 25(OH) vitamin D concentrations were independently associated with infection risk (OR 0.88, p\u2009=\u20090.007), with similar ROC performance (AUROC 77%, p\u2009<\u20090.001). Adequate vitamin D status, predominantly achieved through chronic cholecalciferol supplementation, was independently associated with reduced risk of SARS-CoV-2 breakthrough infection after vaccination.",
-    "stance": "neutral",
+    "stance": "support",
     "study_design": "observational",
     "sample_size": null,
     "pub_date": "2026",
@@ -72,7 +72,7 @@
   {
     "id": "E-42270958-7",
     "text": "Maintaining sufficient 25(OH) vitamin D concentrations may represent a simple and potentially relevant strategy to optimize post-vaccination protection.",
-    "stance": "neutral",
+    "stance": "support",
     "study_design": "observational",
     "sample_size": null,
     "pub_date": "2026",
@@ -402,7 +402,7 @@
   {
     "id": "E-42037591-12",
     "text": "This finding highlights the need for large, well-designed, placebo-controlled trials to confirm the potential benefit. We found moderate-certainty evidence that higher-dose vitamin D supplementation, compared with lower doses, probably does not reduce the proportion of children making healthcare visits for ARIs and does not reduce the mean number of ARI-related healthcare visits per child.",
-    "stance": "neutral",
+    "stance": "contradict",
     "study_design": "systematic_review",
     "sample_size": null,
     "pub_date": "2026",
