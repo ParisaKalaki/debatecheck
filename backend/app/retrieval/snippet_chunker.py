@@ -1,4 +1,4 @@
-"""
+﻿"""
 Step 3: Split abstracts into short evidence snippets, each with a unique ID.
 Also cleans up HTML-style tags PubMed sometimes embeds in structured abstracts.
 """
@@ -49,8 +49,8 @@ def chunk_abstract(paper: dict, max_sentences_per_chunk: int = 2) -> list[dict]:
 
 
 if __name__ == "__main__":
-    from pubmed_search import search_pubmed
-    from pubmed_fetch import fetch_abstracts
+    from app.retrieval.pubmed_search import search_pubmed
+    from app.retrieval.pubmed_fetch import fetch_abstracts
 
     test_claim = "intermittent fasting longevity"
     ids = search_pubmed(test_claim, retmax=2)

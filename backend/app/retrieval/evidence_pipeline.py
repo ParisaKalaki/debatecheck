@@ -7,22 +7,20 @@ a clean list of EvidenceSnippet objects matching the shared schema.
 
 Person 2 doesn't need to know or care about the 5 steps inside —
 they just call get_evidence_for_claim(claim) and get snippets back.
+
+Uses package imports (app.*) so it works when imported from FastAPI, the agents,
+or evaluation. Run the test from the backend/ folder:
+    python -m app.retrieval.evidence_pipeline
 """
 
-import sys
-from pathlib import Path
+import re
 
-# Make the shared schema importable regardless of where this is run from
-sys.path.append(str(Path(__file__).resolve().parents[1]))  # points at backend/app/
-from core.schemas import EvidenceSnippet
-
-from pubmed_search import search_pubmed
-from pubmed_fetch import fetch_abstracts
-from snippet_chunker import chunk_abstract
-from quality_extractor import enrich_snippet
-from stance_classifier import classify_snippets_stance  # remove is_relevant from this import
-
-
+from app.core.schemas import EvidenceSnippet
+from app.retrieval.pubmed_search import search_pubmed
+from app.retrieval.pubmed_fetch import fetch_abstracts
+from app.retrieval.snippet_chunker import chunk_abstract
+from app.retrieval.quality_extractor import enrich_snippet
+from app.retrieval.stance_classifier import classify_snippets_stance
 
 
 def extract_claim_keywords(claim: str) -> tuple[list[str], list[str]]:
@@ -31,7 +29,6 @@ def extract_claim_keywords(claim: str) -> tuple[list[str], list[str]]:
     (first half) and 'outcome' (second half) — so relevance checking can
     require a match from BOTH sides, not just any two words from one side.
     """
-    import re
     stopwords = {"a", "an", "the", "is", "are", "do", "does", "of", "for",
                  "to", "and", "or", "improve", "improves", "prevent",
                  "prevents", "reduce", "reduces", "increase", "increases",
@@ -64,6 +61,7 @@ def is_relevant(paper: dict, subject_terms: list[str], outcome_terms: list[str])
     has_outcome = any(stem_match(term, text) for term in outcome_terms)
     return has_subject and has_outcome
 
+
 def get_evidence_for_claim(claim: str, retmax: int = 8) -> list[EvidenceSnippet]:
     subject_terms, outcome_terms = extract_claim_keywords(claim)
 
@@ -79,8 +77,6 @@ def get_evidence_for_claim(claim: str, retmax: int = 8) -> list[EvidenceSnippet]
         snippets = [enrich_snippet(s, pubmed_types) for s in snippets]
         snippets = classify_snippets_stance(claim, snippets)
         all_snippets.extend(snippets)
-
-    # ... rest stays the same (converting to EvidenceSnippet objects)
 
     # Convert raw dicts into validated EvidenceSnippet objects
     evidence_snippets = []

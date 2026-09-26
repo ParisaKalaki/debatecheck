@@ -1,4 +1,4 @@
-"""
+﻿"""
 Traditional baseline: keyword retrieval + pretrained NLI classifier + majority vote.
 
 No LLM agents, no prompting — just a pretrained entailment model deciding
@@ -68,9 +68,8 @@ def majority_vote_verdict(snippets_with_stance: list[dict]) -> dict:
 if __name__ == "__main__":
     import sys
     from pathlib import Path
-    sys.path.append(str(Path(__file__).resolve().parents[1] / "retrieval"))
     
-    from evidence_pipeline import get_evidence_for_claim
+    from app.retrieval.evidence_pipeline import get_evidence_for_claim
 
     claim = "vitamin D supplements prevent respiratory infections"
 

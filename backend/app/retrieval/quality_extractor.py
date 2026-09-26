@@ -1,4 +1,4 @@
-"""
+﻿"""
 Step 4: Extract quality metadata for each snippet.
 
 Primary method: use PubMed's own official PublicationType metadata
@@ -111,9 +111,9 @@ def enrich_snippet(snippet: dict, pubmed_types: list[str] = None) -> dict:
 
 
 if __name__ == "__main__":
-    from pubmed_search import search_pubmed
-    from pubmed_fetch import fetch_abstracts
-    from snippet_chunker import chunk_abstract
+    from app.retrieval.pubmed_search import search_pubmed
+    from app.retrieval.pubmed_fetch import fetch_abstracts
+    from app.retrieval.snippet_chunker import chunk_abstract
 
     test_claim = "intermittent fasting longevity"
     ids = search_pubmed(test_claim, retmax=2)

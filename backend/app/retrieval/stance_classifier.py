@@ -91,10 +91,11 @@ def classify_snippets_stance(claim: str, snippets: list[dict]) -> list[dict]:
 
 
 if __name__ == "__main__":
-    from pubmed_search import search_pubmed
-    from pubmed_fetch import fetch_abstracts
-    from snippet_chunker import chunk_abstract
-    from quality_extractor import enrich_snippet
+    # Run from the backend/ folder: python -m app.retrieval.stance_classifier
+    from app.retrieval.pubmed_search import search_pubmed
+    from app.retrieval.pubmed_fetch import fetch_abstracts
+    from app.retrieval.snippet_chunker import chunk_abstract
+    from app.retrieval.quality_extractor import enrich_snippet
 
     test_claim = "vitamin D supplements prevent respiratory infections"
     claim_keywords = ["vitamin D", "25(OH)D", "cholecalciferol", "25-hydroxyvitamin"]

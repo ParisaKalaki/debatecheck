@@ -1,4 +1,4 @@
-"""
+﻿"""
 Step 2: Fetch abstract text for a list of PubMed IDs.
 """
 
@@ -53,7 +53,7 @@ def fetch_abstracts(pmids: list[str]) -> list[dict]:
 
 
 if __name__ == "__main__":
-    from pubmed_search import search_pubmed
+    from app.retrieval.pubmed_search import search_pubmed
 
     test_claim = "intermittent fasting longevity"
     ids = search_pubmed(test_claim, retmax=10)  # keep small for testing
