@@ -12,37 +12,56 @@ A traditional NLP baseline (keyword retrieval + stance classifier) is built alon
 git clone https://github.com/ParisaKalaki/debatecheck.git
 cd debatecheck
 
-curl -LsSf https://astral.sh/uv/install.sh | sh   # if you don't have uv
+# Install uv (if you don't have it)
+curl -LsSf https://astral.sh/uv/install.sh | sh                          # macOS/Linux
+# powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"   # Windows
+
 uv venv
 source .venv/bin/activate                          # Windows: .venv\Scripts\activate
 uv pip install -r backend/requirements.txt
 
-cp .env.example .env
+cp .env.example .env                               # Windows: copy .env.example .env
 # then fill in your own NCBI_EMAIL and GOOGLE_API_KEY in .env — never commit it
 ```
 
+## How to run code (important)
+
+All code uses package imports (`from app.retrieval... import ...`), so **always run from the `backend/` folder using `python -m`**:
+
+```bash
+cd backend
+python -m app.retrieval.evidence_pipeline     # evidence retrieval test
+python -m app.baseline.nli_classifier         # traditional baseline test
+python -m app.agents.debate_graph             # debate agents test (uses saved fixture)
+```
+
+Running a file directly (e.g. `python evidence_pipeline.py` from inside `retrieval/`) will fail with import errors.
+
 ## Repo structure
 
-- backend/app/retrieval/ evidence pipeline — DONE (Person 1)
-- backend/app/baseline/ traditional NLP baseline — DONE (Person 1)
-- backend/app/agents/ debate agents + judge — not started (Person 2, Person 3)
-- backend/app/api/ FastAPI routes — not started (Person 4)
-- backend/app/core/ shared schemas (used by everyone)
-- frontend/ web app — not started (Person 4)
-- evaluation/ benchmarking — not started (Person 5)
+- `backend/app/retrieval/` evidence pipeline — DONE (Person 1)
+- `backend/app/baseline/` traditional NLP baseline — DONE (Person 1)
+- `backend/app/agents/` debate agents — DONE (Person 2); judge — not started (Person 3)
+- `backend/app/api/` FastAPI routes — not started (Person 4)
+- `backend/app/core/` shared schemas (used by everyone)
+- `backend/tests/` saved test fixtures (real pipeline outputs)
+- `frontend/` web app — not started (Person 4)
+- `evaluation/` benchmarking — not started (Person 5)
 
 ## What's done
 
-**Evidence pipeline** (`backend/app/retrieval/`)
+### Evidence pipeline (`backend/app/retrieval/`)
 
 ```python
-from evidence_pipeline import get_evidence_for_claim
+from app.retrieval.evidence_pipeline import get_evidence_for_claim
 evidence = get_evidence_for_claim("vitamin D supplements prevent respiratory infections")
 ```
 
 Returns a list of `EvidenceSnippet` objects (id, text, stance, study_design, sample_size, pub_date, source_credibility, source_url).
 
-### Example: Evidence Retrieval Pipeline
+The stance prompt is **claim-generic**: Gemini first identifies the claim's intervention and outcome, and a snippet must address both to be labelled `support` or `contradict`.
+
+#### Example: Evidence Retrieval Pipeline
 
 ```text
 Claim
@@ -78,13 +97,68 @@ Classifies each snippet
 Example: support / contradict / neutral
 ```
 
-**Traditional baseline** (`backend/app/baseline/nli_classifier.py`) — uses a pretrained NLI model to classify each evidence snippet as support, contradict, or neutral, then combines the results using a simple majority vote. No LLM prompting or agents are used. This provides a simple traditional comparison point for the agentic system.
+### Traditional baseline (`backend/app/baseline/nli_classifier.py`)
 
-**Shared schema** (`backend/app/core/schemas.py`) — defines common data structures such as `EvidenceSnippet`, `DebateTurn`, and `JudgeVerdict`, so all components use the same format when passing information between them.
+Uses a pretrained NLI model to classify each evidence snippet as support, contradict, or neutral, then combines the results using a simple majority vote. No LLM prompting or agents are used. This provides a simple traditional comparison point for the agentic system.
+
+### Debate agents (`backend/app/agents/`)
+
+```python
+from app.agents.debate_graph import run_debate
+result = run_debate(claim, evidence)   # evidence = output of get_evidence_for_claim
+```
+
+Returns:
+
+```text
+{
+  "claim": str,
+  "transcript": list[DebateTurn],   # 4 turns: PRO r1, CON r1, PRO r2, CON r2
+  "citation_log": list[dict]        # per turn: dropped_points, invalid_ids
+}
+```
+
+How it works:
+
+```text
+Evidence snippets
+        ↓
+Split into piles
+PRO pile = support + neutral     CON pile = contradict + neutral
+        ↓
+Round 1 — Opening (LangGraph)
+PRO argues TRUE from its pile → CON argues FALSE from its pile
+        ↓
+Round 2 — Rebuttal
+Each agent sees the opponent's opening and may cite the opponent's
+snippets to call out misrepresentation
+        ↓
+Citation enforcement
+Every point must cite a valid snippet ID from the allowed evidence.
+Invalid IDs are removed; points with no valid ID are dropped and logged.
+        ↓
+DebateTurn objects (shared schema) → passed to the judge
+```
+
+- `debate_agents.py` — prompts, Gemini calls (structured JSON output), citation enforcement
+- `debate_graph.py` — LangGraph flow and `run_debate()` entry point
+- Agents receive each snippet's quality metadata (study design, sample size, year, credibility) and are instructed to prioritise higher-quality evidence and not overstate certainty.
+- Model can be changed via `DEBATE_MODEL` in `.env` (default: `gemini-3.5-flash-lite`).
+
+### Test fixtures (`backend/tests/`)
+
+- `fixture_vitd.json` — real evidence output for the vitamin D claim
+- `fixture_vitd_debate.json` — real debate transcript (input for the judge, Person 3)
+
+Use these to develop and test without calling PubMed/Gemini every time.
+
+### Shared schema (`backend/app/core/schemas.py`)
+
+Defines common data structures such as `EvidenceSnippet`, `DebateTurn`, and `JudgeVerdict`, so all components use the same format when passing information between them.
 
 ## Not yet started
 
-Debate agents (Person 2), judge agent (Person 3), web app (Person 4), full PubHealth evaluation (Person 5).
+Judge agent (Person 3), web app (Person 4), full PubHealth evaluation (Person 5).
 
 ## Git workflow
 
