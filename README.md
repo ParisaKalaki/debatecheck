@@ -21,7 +21,7 @@ source .venv/bin/activate                          # Windows: .venv\Scripts\acti
 uv pip install -r backend/requirements.txt
 
 cp .env.example .env                               # Windows: copy .env.example .env
-# then fill in your own NCBI_EMAIL and GOOGLE_API_KEY in .env — never commit it
+# then fill in your own NCBI_EMAIL, GOOGLE_API_KEY, and GROQ_API_KEY in .env — never commit it
 ```
 
 ## How to run code (important)
@@ -33,6 +33,7 @@ cd backend
 python -m app.retrieval.evidence_pipeline     # evidence retrieval test
 python -m app.baseline.nli_classifier         # traditional baseline test
 python -m app.agents.debate_graph             # debate agents test (uses saved fixture)
+python -m app.judge.judge_agent               # judge agent test (uses saved fixture)
 ```
 
 Running a file directly (e.g. `python evidence_pipeline.py` from inside `retrieval/`) will fail with import errors.
@@ -41,7 +42,8 @@ Running a file directly (e.g. `python evidence_pipeline.py` from inside `retriev
 
 - `backend/app/retrieval/` evidence pipeline — DONE (Person 1)
 - `backend/app/baseline/` traditional NLP baseline — DONE (Person 1)
-- `backend/app/agents/` debate agents — DONE (Person 2); judge — not started (Person 3)
+- `backend/app/agents/` debate agents — DONE (Person 2)
+- `backend/app/judge/` judge agent — DONE (Person 3)
 - `backend/app/api/` FastAPI routes — not started (Person 4)
 - `backend/app/core/` shared schemas (used by everyone)
 - `backend/tests/` saved test fixtures (real pipeline outputs)
@@ -145,6 +147,94 @@ DebateTurn objects (shared schema) → passed to the judge
 - Agents receive each snippet's quality metadata (study design, sample size, year, credibility) and are instructed to prioritise higher-quality evidence and not overstate certainty.
 - Model can be changed via `DEBATE_MODEL` in `.env` (default: `gemini-3.5-flash-lite`).
 
+### Judge agent (`backend/app/judge/`)
+
+```python
+from app.judge.judge_agent import judge_debate_with_confidence
+verdict = judge_debate_with_confidence(claim, transcript, evidence, n_runs=4)   # transcript/evidence = debate_graph.run_debate() output
+```
+
+Returns a `JudgeVerdict`:
+
+```text
+{
+  "reasoning": str,               # written FIRST, walks through the quality comparison
+  "verdict": str,                 # "True" | "Likely True" | "Mixed / Unclear" | "Likely False" | "False" | "Unverifiable"
+  "confidence": float,            # 0.0-1.0 -- confidence in the LABEL chosen
+  "misinformation_risk": str,     # "Low" | "Medium" | "High"
+  "risk_reason": str,
+  "top_counter_evidence": str,    # strongest point from the side OPPOSING the verdict
+  "evidence_gap_note": str | None,
+  "final_answer": str,            # computed automatically, e.g. "Based on the evidence, this claim is MOSTLY FALSE (78% confidence)."
+}
+```
+
+How it works:
+
+```text
+Debate transcript + evidence quality metadata (study_design, sample_size, pub_date, source_credibility)
+        ↓
+Evidence quality lookup table
+Every cited snippet's quality metadata, keyed by ID, so the judge can check either side's citations
+        ↓
+Groq (openai/gpt-oss-120b), structured JSON output (response_format=json_schema, strict=True)
+Weighs evidence by QUALITY (study design > sample size > recency)
+        ↓
+JudgeVerdict
+reasoning fills in first, then verdict/confidence/risk/counter-evidence stay consistent with it
+```
+
+- Runs on **Groq**, free tier (`GROQ_API_KEY` in `.env`).
+- `top_counter_evidence` is deliberately the strongest point from the side **opposing** the verdict.
+- `confidence` measures how sure the judge is that its chosen **label** is correct — this works the same way for all 6 labels, including "Mixed / Unclear" (a confident "genuinely contested" vs. an unsure one). It's the **agreement rate across `n_runs` independent runs** (see "Self-consistency confidence" below), not a single self-reported number.
+- `final_answer` isn't a separate LLM call — it's a `@computed_field` on `JudgeVerdict` (see schemas.py) that's computed automatically from verdict + confidence. Because it's just a lookup, it can never drift out of sync with those two fields, and Groq is never asked to generate it. It shows up automatically whenever a JudgeVerdict is serialized (`.model_dump()` / `.model_dump_json()`), so any API response built from one gets it for free.
+- The judge only sends evidence quality metadata for snippets actually **cited** somewhere in the transcript, not Person 1's full evidence list. A debate transcript usually cites well under half of what gets retrieved, so including the rest would just burn prompt tokens for no benefit. On real fixtures, this cuts prompt size roughly in half.
+- If Groq returns a rate-limit error, the judge automatically waits the time Groq reports and retries, up to twice, instead of crashing — this happens more often than you'd expect. See "Groq free-tier rate limit" below for details.
+
+#### Evidence quality scoring 
+
+Before the judge ever sees a snippet, `study_design` is set from PubMed's own official PublicationType field when available (authoritative — curated by PubMed/NLM's indexers), falling back to regex matching on the snippet text (e.g. `"randomized controlled trial"`, `"cohort study"`) only when PubMed didn't provide one. `sample_size` is regex-only (no PubMed field for it), left `None` when nothing matches.
+
+Two different quality scales get built from `study_design`, at different points in the pipeline:
+
+**`source_credibility`** (`high` / `medium` / `low` / `unknown`) — set once, in `quality_extractor.py`, stored on the `EvidenceSnippet` itself, and shown to the judge as a quick-glance label alongside each citation:
+
+| source_credibility | study_design |
+|---|---|
+| high | systematic_review, meta_analysis, RCT |
+| medium | cohort_study, clinical_trial, pilot_trial, observational |
+| low | case_report, narrative_review |
+| unknown | no study design could be determined |
+
+**`QUALITY_TIER_NOTES`** — a separate, finer-grained ordering baked directly into the judge's prompt (`judge_agent.py`), which is what the judge is actually told to weigh evidence by:
+
+| tier | study_design | note |
+|---|---|---|
+| 1 (strongest) | systematic_review, meta_analysis | synthesizes many studies |
+| 2 | RCT | randomized, causal evidence |
+| 3 | cohort_study, clinical_trial | observational but structured, moderate |
+| 4 | pilot_trial, observational | smaller / less controlled |
+| 5 (weakest) | case_report, narrative_review | anecdotal or non-systematic |
+
+Both use the same underlying ordering — the standard evidence-hierarchy pyramid from evidence-based medicine (synthesis > randomized > observational > anecdotal), so the ordering itself is a common, recognized one, just a simplification of a full grading system like GRADE or Oxford CEBM. The difference is granularity: `source_credibility` collapses tiers 1+2 into "high" and tiers 3+4 into "medium," while `QUALITY_TIER_NOTES` keeps all 5 separate. The judge's prompt also adds *"within a tier, larger sample_size and more recent pub_date both increase weight,"* which lets it rank two studies at the same tier.
+
+Since both `study_design` detection and `sample_size` extraction are regex-based fallbacks, not guaranteed — a study design phrased unusually can come back `unknown`/`None`. The judge is explicitly told to treat that as lower-confidence evidence rather than ignore it, and to flag it in `evidence_gap_note` if it affects the verdict.
+
+#### Self-consistency confidence
+
+`judge_debate_with_confidence(claim, transcript, evidence, n_runs=4)` is the decided way to call the judge, not `judge_debate` directly. Instead of trusting one self-reported confidence number, it runs the judge `n_runs` times in parallel and uses the **fraction of runs that agree on the verdict** as confidence — e.g. "this verdict held on 3 of 4 independent runs" is a real, code-computed number, not the model's self-assessment.
+
+`judge_debate(claim, transcript, evidence)` — a single call, no self-consistency — still exists in `judge_agent.py` as the function `judge_debate_with_confidence` is built on.
+
+#### Groq free-tier rate limit
+
+Groq's free tier caps total token usage at **8000 tokens-per-minute (TPM)** per API key, shared across *every* call the judge makes, including all `n_runs=4` calls `judge_debate_with_confidence` fires at once. This is a real, hard ceiling and it's easy to hit in normal use, not just edge cases:
+
+- Calling the judge many times in quick succession (e.g. testing several different claims within a minute or two) can trigger a `429` rate-limit error.
+- `judge_debate`'s automatic retry (`_call_groq_with_retry`) waits the time Groq itself reports and retries up to twice, so a single hit usually recovers on its own — but that wait has been anywhere from ~45 seconds to several minutes on real runs, depending on how far over the limit the request was.
+- Practical guidance: don't run several different new claims back to back without a short pause between them. A multi-minute wait mid-run is expected behavior on the free tier, not something to debug.
+- This is specific to the free tier — Groq's paid tier raises the TPM limit considerably, which would remove this constraint entirely if the project ever needed to run many claims reliably in quick succession.
+
 ### Test fixtures (`backend/tests/`)
 
 - `fixture_vitd.json` — real evidence output for the vitamin D claim
@@ -158,7 +248,7 @@ Defines common data structures such as `EvidenceSnippet`, `DebateTurn`, and `Jud
 
 ## Not yet started
 
-Judge agent (Person 3), web app (Person 4), full PubHealth evaluation (Person 5).
+web app (Person 4), full PubHealth evaluation (Person 5).
 
 ## Git workflow
 
