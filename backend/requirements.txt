@@ -13,6 +13,6 @@ pandas
 transformers
 torch
 
-anthropic
+groq
 
 langgraph
