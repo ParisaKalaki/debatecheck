@@ -151,7 +151,7 @@ DebateTurn objects (shared schema) → passed to the judge
 
 ```python
 from app.judge.judge_agent import judge_debate_with_confidence
-verdict = judge_debate_with_confidence(claim, transcript, evidence, n_runs=3)   # transcript/evidence = debate_graph.run_debate() output
+verdict = judge_debate_with_confidence(claim, transcript, evidence, n_runs=4)   # transcript/evidence = debate_graph.run_debate() output
 ```
 
 Returns a `JudgeVerdict`:
