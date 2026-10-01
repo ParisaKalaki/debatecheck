@@ -16,7 +16,19 @@ from app.agents.debate_graph import run_debate
 from app.core.schemas import DebateTurn, EvidenceSnippet, JudgeVerdict
 from app.judge.judge_agent import judge_debate_with_confidence
 from app.retrieval.evidence_pipeline import get_evidence_for_claim
+import json
+from pathlib import Path
+import os
 
+# Set to True while testing the UI to avoid hitting rate limits.
+# Set back to False before final submission/demo.
+USE_FIXTURE = os.getenv("DEBATECHECK_USE_FIXTURE", "false").lower() == "true"
+
+
+
+FIXTURE_PATH = Path(__file__).resolve().parents[2] / "tests" / "fixture_vitd_debate.json"
+EVIDENCE_FIXTURE_PATH = Path(__file__).resolve().parents[2] / "tests" / "fixture_vitd.json"
+VERDICT_FIXTURE_PATH = Path(__file__).resolve().parents[2] / "tests" / "fixture_vitd_verdict.json"
 
 app = FastAPI(
     title="DebateCheck API",
@@ -62,6 +74,8 @@ def health():
     return {"status": "ok"}
 
 
+
+
 @app.post("/verify", response_model=VerificationResponse)
 def verify_claim(request: ClaimRequest):
     claim = request.claim.strip()
@@ -70,43 +84,51 @@ def verify_claim(request: ClaimRequest):
         raise HTTPException(status_code=400, detail="Claim cannot be empty.")
 
     try:
-        # Person 1: PubMed retrieval + stance + quality metadata
-        evidence = get_evidence_for_claim(claim, retmax=request.retmax)
+        if USE_FIXTURE:
+            # ---- Fixture mode: zero API calls, instant response ----
+            evidence_raw = json.loads(EVIDENCE_FIXTURE_PATH.read_text())
+            evidence = [EvidenceSnippet(**e) for e in evidence_raw]
 
-        if not evidence:
-            raise HTTPException(
-                status_code=422,
-                detail=(
-                    "No sufficiently relevant PubMed evidence was retrieved for this "
-                    "claim. Try rewriting the claim more specifically."
-                ),
+            debate_raw = json.loads(FIXTURE_PATH.read_text())
+            transcript = [DebateTurn(**t) for t in debate_raw["transcript"]]
+            citation_log = debate_raw["citation_log"]
+
+            verdict = JudgeVerdict(**json.loads(VERDICT_FIXTURE_PATH.read_text()))
+            claim = debate_raw["claim"]
+
+        else:
+            # ---- Live mode: real pipeline ----
+            evidence = get_evidence_for_claim(claim, retmax=request.retmax)
+
+            if not evidence:
+                raise HTTPException(
+                    status_code=422,
+                    detail=(
+                        "No sufficiently relevant PubMed evidence was retrieved for this "
+                        "claim. Try rewriting the claim more specifically."
+                    ),
+                )
+
+            debate = run_debate(claim, evidence)
+            transcript = debate["transcript"]
+            citation_log = debate["citation_log"]
+
+            verdict = judge_debate_with_confidence(
+                claim=claim, transcript=transcript, evidence=evidence, verbose=False,
             )
-
-        # Person 2: PRO/CON opening arguments + rebuttals
-        debate = run_debate(claim, evidence)
-        transcript = debate["transcript"]
-
-        # Person 3: quality-weighted judge + self-consistency confidence
-        verdict = judge_debate_with_confidence(
-            claim=claim,
-            transcript=transcript,
-            evidence=evidence,
-            verbose=False,
-        )
 
         return VerificationResponse(
             claim=claim,
             verdict=verdict,
             transcript=transcript,
             evidence=evidence,
-            citation_log=debate["citation_log"],
+            citation_log=citation_log,
             evidence_count=len(evidence),
         )
 
     except HTTPException:
         raise
     except Exception as exc:
-        # Keep internal stack traces/API keys out of the client response.
         raise HTTPException(
             status_code=500,
             detail=f"Verification pipeline failed: {type(exc).__name__}.",

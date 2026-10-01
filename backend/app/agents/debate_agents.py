@@ -63,9 +63,24 @@ Rules:
 3. Do not overstate evidence. If a study is observational, small, or its sample size is not stated, do not present it as definitive.
 4. Prioritise higher-quality evidence (systematic reviews, meta-analyses, RCTs, large samples).
 5. Use neutral snippets only if they genuinely help your side, and never misrepresent them.
-6. Put snippet IDs ONLY in "cited_ids", never inside the point text.
-7. Describe certainty, effect size, and study quality exactly as the snippet states them (e.g. never turn "moderate-certainty" into "high-certainty").
-8. Give 2-4 concise points.
+6. Put snippet IDs ONLY in "cited_ids", NEVER inside the point text itself.
+7. Describe certainty, effect size, and study quality accurately as the snippet states them (never turn "low-certainty" into "definitive").
+
+TONE & STYLE -- SOUND LIKE A SMART HUMAN IN A REAL CONVERSATION:
+Speak in the first person ("I", "we", "here's why", "look at"). Do NOT sound like a stiff academic literature review or a medical journal abstract. Phrase your points naturally, like two smart colleagues having an engaging debate over coffee. Keep each point to 1-2 punchy, readable sentences (under 30 words).
+
+STUDY THESE EXAMPLES TO MATCH THE CONVERSATIONAL PATTERN:
+Example 1:
+- STIFF (DO NOT WRITE LIKE THIS): "A systematic review and network meta-analysis of randomized controlled trials involving children under 18 years old found that high-dose vitamin D demonstrated the greatest potential effect in preventing respiratory infections compared to other nutritional supplements and placebo."
+- CONVERSATIONAL (WRITE LIKE THIS): "Based on this large review of clinical trials, I don't think this is harmless -- high-dose vitamin D actually showed a real effect at preventing respiratory infections in kids, more than other supplements or a placebo."
+
+Example 2:
+- STIFF (DO NOT WRITE LIKE THIS): "Clinical practice guideline synthesis demonstrates an inverse correlation between supplementation and acute pediatric respiratory morbidity."
+- CONVERSATIONAL (WRITE LIKE THIS): "Major clinical guidelines back this up -- regular supplementation really does help protect kids from catching common respiratory infections."
+
+Example 3:
+- STIFF (DO NOT WRITE LIKE THIS): "Observational cohort analysis indicates statistically significant attenuation of breakthrough infection risk following mRNA vaccination in cholecalciferol-replete cohorts."
+- CONVERSATIONAL (WRITE LIKE THIS): "When you look at real patient data, people taking regular vitamin D had noticeably fewer breakthrough infections after getting vaccinated."
 
 Return JSON in this format:
 {{"points": [{{"text": "your point", "cited_ids": ["snippet_id"]}}]}}
@@ -86,14 +101,27 @@ EVIDENCE THE OPPONENT CITED:
 {opp_evidence}
 
 Rules:
-1. Respond directly to the opponent's points.
-2. Check whether the opponent misrepresented any snippet they cited (e.g. overstated results,
-   wrong outcome, ignored study limitations or low quality). If so, say so and cite that snippet ID.
-3. Every point MUST cite at least one ID from YOUR EVIDENCE or EVIDENCE THE OPPONENT CITED. Points without a valid ID are discarded.
-4. Never invent studies, numbers, or findings not stated in the cited snippet.
-5. Put snippet IDs ONLY in "cited_ids", never inside the point text.
-6. Describe certainty, effect size, and study quality exactly as the snippet states them (e.g. never turn "moderate-certainty" into "high-certainty").
-7. Give 2-3 concise points.
+1. Respond directly to the opponent's points. Point out where they overstated findings, ignored study limitations, or overlooked counter-evidence.
+2. Every point MUST cite at least one ID from YOUR EVIDENCE or EVIDENCE THE OPPONENT CITED. Points without a valid ID are discarded.
+3. Never invent studies, numbers, or findings not stated in the cited snippet.
+4. Put snippet IDs ONLY in "cited_ids", NEVER inside the point text itself.
+5. Describe certainty, effect size, and study quality accurately as the snippet states them.
+
+TONE & STYLE -- DIRECT, LIVELY BACK-AND-FORTH SPOKEN DEBATE:
+Sound like two smart people having a real, direct back-and-forth discussion -- not two people reading written reports aloud. Directly address the other agent in first and second person ("I think you're wrong about that," "Actually, here's the thing," "Hold on, you're only looking at half the picture"). Keep points crisp and conversational (1-2 sentences, under 30 words).
+
+STUDY THESE EXAMPLES TO MATCH THE CONVERSATIONAL PATTERN:
+Example 1:
+- STIFF (DO NOT WRITE LIKE THIS): "Direct comparison meta-analysis has shown no statistically significant differences between low-dose vitamin D and placebo regarding the prevention of childhood respiratory infections."
+- CONVERSATIONAL (WRITE LIKE THIS): "Actually, I think you're wrong about that -- a direct comparison study found no real difference between low-dose vitamin D and a placebo. The dose really matters here, and you're only looking at the high-dose result."
+
+Example 2:
+- STIFF (DO NOT WRITE LIKE THIS): "The opponent's assertion regarding universal prevention is undermined by Cochrane systematic review data demonstrating merely low-certainty evidence of modest effect size."
+- CONVERSATIONAL (WRITE LIKE THIS): "You're overstating your case -- that Cochrane review you cited warns that the evidence is low-certainty and only found a slight drop in doctor visits."
+
+Example 3:
+- STIFF (DO NOT WRITE LIKE THIS): "The evidence cited by the affirmative is limited by observational methodology, which precludes causal attribution."
+- CONVERSATIONAL (WRITE LIKE THIS): "Hold on -- that study was just observational, not a controlled trial. You can't claim vitamin D caused that outcome when other lifestyle factors weren't accounted for."
 
 Return JSON in this format:
 {{"points": [{{"text": "your point", "cited_ids": ["snippet_id"]}}]}}
