@@ -1,0 +1,11 @@
+eval_id,claim,ground_truth,raw_verdict,prediction,support_count,contradict_count,neutral_count,evidence_count,latency_seconds,error
+PH_001,"Nobel for quantum ""parlour trick"" that could make super computers.",true,,,,,,,3.092905417084694,Supplied id parameter is empty.
+PH_002,The novel coronavirus was “man-made.”,false,leans false,false,1,12,2,15,9.60943212499842,
+PH_003,A set of images show a congenital anomaly that resulted in an a hand with eight fingers.,mixture,,,,,,,2.0552287499886006,Supplied id parameter is empty.
+PH_004,"A Facebook post is correct in saying N95 masks, surgical masks, and cloth masks can be dangerous and/or ineffective in protecting against the spread of COVID-19 based on CDC and U.S. Occupational Safety and Health Administration (OSHA) guidelines. ",false,,,,,,,2.450610833009705,Supplied id parameter is empty.
+PH_005,New hearts forge new friendship for transplant recipients.,true,,,,,,,2.1385502910707146,Supplied id parameter is empty.
+PH_006,"There’s not one public study, and by public study I mean a study available to the public, that has looked at using the product Kaput to poison feral hogs.",true,leans false,false,0,37,3,40,20.742072500055656,
+PH_007," A prayer alert about Ryan Corbin, the grandson of singer Pat Boone. Ryan is described as being in a coma in Southern California with brain injury from a fall of three stories. ",true,,,,,,,1.9776118339505047,Supplied id parameter is empty.
+PH_008,"Proposed tax changes are a ""handout"" to BP.",mixture,,,,,,,2.143239957978949,Supplied id parameter is empty.
+PH_009,Data suggests opioid-related overdose deaths in Alaska down.,true,,,,,,,2.143779332982376,Supplied id parameter is empty.
+PH_010,Rhode Island law aims to prevent suicides at public colleges.,true,leans false,false,5,17,1,23,8.032255750149488,
