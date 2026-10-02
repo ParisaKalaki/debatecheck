@@ -25,7 +25,7 @@ cp .env.example .env                               # Windows: copy .env.example 
 # then fill in your own NCBI_EMAIL, GOOGLE_API_KEY, and GROQ_API_KEY in .env — never commit it
 ```
 
-## How to run code (important)
+## How to run code (for development/testing individual components)
 
 All code uses package imports (`from app.retrieval... import ...`), so **always run from the `backend/` folder using `python -m`**:
 
@@ -39,7 +39,9 @@ python -m app.judge.judge_agent               # judge agent test (uses saved fix
 
 Running a file directly (e.g. `python evidence_pipeline.py` from inside `retrieval/`) will fail with import errors.
 
-## Run the web app
+## Run the web app (the full product, end to end)
+
+Make sure your virtual environment is activated first: `source .venv/bin/activate`
 
 Start the FastAPI backend from the `backend/` folder:
 
