@@ -26,6 +26,8 @@ st.set_page_config(
     layout="wide",
 )
 
+# CSS will be injected later via inject_chat_styles()
+
 # ---------- Clean SVG Vector Icons (No generic emojis) ----------
 
 SVG_ICONS = {
@@ -421,6 +423,9 @@ html, body, [class*="css"] {
 def inject_chat_styles():
     """Inject modern, responsive CSS for the live debate chat conversation."""
     st.markdown(CHAT_CSS, unsafe_allow_html=True)
+
+# Immediately inject styles so the header is styled from the start
+inject_chat_styles()
 
 
 # ---------- Helpers: Plain-Language Humanizer & Citations ----------

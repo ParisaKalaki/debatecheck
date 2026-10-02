@@ -19,10 +19,15 @@ from app.retrieval.evidence_pipeline import get_evidence_for_claim
 import json
 from pathlib import Path
 import os
+from dotenv import load_dotenv
+
+# Explicitly load .env from project root
+load_dotenv(dotenv_path=Path(__file__).resolve().parents[3] / ".env", override=True)
 
 # Set to True while testing the UI to avoid hitting rate limits.
 # Set back to False before final submission/demo.
 USE_FIXTURE = os.getenv("DEBATECHECK_USE_FIXTURE", "false").lower() == "true"
+print(f"[DebateCheck] USE_FIXTURE = {USE_FIXTURE}")
 
 
 
@@ -71,7 +76,7 @@ def root():
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    return {"status": "ok", "use_fixture": USE_FIXTURE}
 
 
 

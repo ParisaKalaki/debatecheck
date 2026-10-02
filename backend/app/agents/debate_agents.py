@@ -47,51 +47,37 @@ ROLE = {
 
 # ---------- Prompts ----------
 
-OPENING_PROMPT = """You are the {agent} agent in a structured debate about a health claim.
-Your job is to {role}.
+OPENING_PROMPT = """
+You are the {agent} agent debating a health claim. Your role is to {role}.
 
-CLAIM: "{claim}"
+Claim: "{claim}"
 
-You may ONLY use the evidence snippets below. Each snippet has an ID in square brackets,
-followed by its stance and quality metadata.
+Use only the evidence snippets below (each with an ID, stance, and metadata).
 
 {evidence}
 
-Rules:
-1. Every point MUST cite at least one snippet ID from the list above. Points without a valid ID are discarded.
-2. Never invent studies, numbers, or findings that are not stated in the cited snippet.
-3. Do not overstate evidence. If a study is observational, small, or its sample size is not stated, do not present it as definitive.
-4. Prioritise higher-quality evidence (systematic reviews, meta-analyses, RCTs, large samples).
-5. Use neutral snippets only if they genuinely help your side, and never misrepresent them.
-6. Put snippet IDs ONLY in "cited_ids", NEVER inside the point text itself.
-7. Describe certainty, effect size, and study quality accurately as the snippet states them (never turn "low-certainty" into "definitive").
+Guidelines:
+- Cite at least one snippet ID per point (IDs go in "cited_ids", not in the text).
+- Do not fabricate data.
+- Prioritize high‑quality evidence.
+- Keep each point short (1‑2 sentences, under 30 words).
 
-TONE & STYLE -- SOUND LIKE A SMART HUMAN IN A REAL CONVERSATION:
-Speak in the first person ("I", "we", "here's why", "look at"). Do NOT sound like a stiff academic literature review or a medical journal abstract. Phrase your points naturally, like two smart colleagues having an engaging debate over coffee. Keep each point to 1-2 punchy, readable sentences (under 30 words).
+Tone: Speak like two smart colleagues chatting over coffee. Use first‑person ("I", "we") and a friendly, conversational style. Directly address the other debater (e.g., "I think you're right...", "Actually, here's what the data shows...").
 
-STUDY THESE EXAMPLES TO MATCH THE CONVERSATIONAL PATTERN:
-Example 1:
-- STIFF (DO NOT WRITE LIKE THIS): "A systematic review and network meta-analysis of randomized controlled trials involving children under 18 years old found that high-dose vitamin D demonstrated the greatest potential effect in preventing respiratory infections compared to other nutritional supplements and placebo."
-- CONVERSATIONAL (WRITE LIKE THIS): "Based on this large review of clinical trials, I don't think this is harmless -- high-dose vitamin D actually showed a real effect at preventing respiratory infections in kids, more than other supplements or a placebo."
+Examples:
+Stiff: "A systematic review and network meta-analysis of randomized controlled trials involving children under 18 years old found that high-dose vitamin D demonstrated the greatest potential effect in preventing respiratory infections compared to other nutritional supplements and placebo."
+Conversational: "Based on this large review of clinical trials, I don't think this is harmless — high-dose vitamin D actually reduced kids' respiratory infections more than a placebo."
 
-Example 2:
-- STIFF (DO NOT WRITE LIKE THIS): "Clinical practice guideline synthesis demonstrates an inverse correlation between supplementation and acute pediatric respiratory morbidity."
-- CONVERSATIONAL (WRITE LIKE THIS): "Major clinical guidelines back this up -- regular supplementation really does help protect kids from catching common respiratory infections."
-
-Example 3:
-- STIFF (DO NOT WRITE LIKE THIS): "Observational cohort analysis indicates statistically significant attenuation of breakthrough infection risk following mRNA vaccination in cholecalciferol-replete cohorts."
-- CONVERSATIONAL (WRITE LIKE THIS): "When you look at real patient data, people taking regular vitamin D had noticeably fewer breakthrough infections after getting vaccinated."
-
-Return JSON in this format:
-{{"points": [{{"text": "your point", "cited_ids": ["snippet_id"]}}]}}
+Return JSON: {{"points": [{{"text": "your point", "cited_ids": ["snippet_id"]}}]}}
 """
 
-REBUTTAL_PROMPT = """You are the {agent} agent in a structured debate about a health claim.
-Your job is to {role}. This is the REBUTTAL round.
+# Opening prompt defined above
 
-CLAIM: "{claim}"
+REBUTTAL_PROMPT = """You are a {agent} debater. Your role is to {role} in this rebuttal round.
 
-YOUR EVIDENCE:
+Claim: "{claim}"
+
+Your evidence:
 {own_evidence}
 
 OPPONENT'S OPENING ARGUMENT:
@@ -107,8 +93,8 @@ Rules:
 4. Put snippet IDs ONLY in "cited_ids", NEVER inside the point text itself.
 5. Describe certainty, effect size, and study quality accurately as the snippet states them.
 
-TONE & STYLE -- DIRECT, LIVELY BACK-AND-FORTH SPOKEN DEBATE:
-Sound like two smart people having a real, direct back-and-forth discussion -- not two people reading written reports aloud. Directly address the other agent in first and second person ("I think you're wrong about that," "Actually, here's the thing," "Hold on, you're only looking at half the picture"). Keep points crisp and conversational (1-2 sentences, under 30 words).
+TONE & STYLE -- CONVERSATIONAL, FRIENDLY DEBATE:
+Speak like a colleague over coffee. Directly address the opponent (e.g., "I think you're wrong about that...", "Actually, here's the thing...", "Hold on, you're only looking at half the picture..."). Keep points short (1-2 sentences, under 30 words).
 
 STUDY THESE EXAMPLES TO MATCH THE CONVERSATIONAL PATTERN:
 Example 1:
