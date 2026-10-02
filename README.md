@@ -18,6 +18,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh                          # macOS
 
 uv venv
 source .venv/bin/activate                          # Windows: .venv\Scripts\activate
+# This installs both backend and frontend dependencies.
 uv pip install -r backend/requirements.txt
 
 cp .env.example .env                               # Windows: copy .env.example .env
@@ -38,16 +39,33 @@ python -m app.judge.judge_agent               # judge agent test (uses saved fix
 
 Running a file directly (e.g. `python evidence_pipeline.py` from inside `retrieval/`) will fail with import errors.
 
+## Run the web app
+
+Start the FastAPI backend from the `backend/` folder:
+
+```bash
+cd backend
+uvicorn app.api.main:app --reload --port 8002
+```
+
+In a second terminal, from the repository root, start the Streamlit frontend:
+
+```bash
+streamlit run frontend/app.py
+```
+
+The frontend uses `http://127.0.0.1:8002` by default. Set `DEBATECHECK_API_URL` to use a different backend URL.
+
 ## Repo structure
 
 - `backend/app/retrieval/` evidence pipeline — DONE (Person 1)
 - `backend/app/baseline/` traditional NLP baseline — DONE (Person 1)
 - `backend/app/agents/` debate agents — DONE (Person 2)
 - `backend/app/judge/` judge agent — DONE (Person 3)
-- `backend/app/api/` FastAPI routes — not started (Person 4)
+- `backend/app/api/` FastAPI routes — DONE (Person 4)
 - `backend/app/core/` shared schemas (used by everyone)
 - `backend/tests/` saved test fixtures (real pipeline outputs)
-- `frontend/` web app — not started (Person 4)
+- `frontend/` web app — DONE (Person 4)
 - `evaluation/` benchmarking — not started (Person 5)
 
 ## What's done
@@ -191,7 +209,7 @@ reasoning fills in first, then verdict/confidence/risk/counter-evidence stay con
 - The judge only sends evidence quality metadata for snippets actually **cited** somewhere in the transcript, not Person 1's full evidence list. A debate transcript usually cites well under half of what gets retrieved, so including the rest would just burn prompt tokens for no benefit. On real fixtures, this cuts prompt size roughly in half.
 - If Groq returns a rate-limit error, the judge automatically waits the time Groq reports and retries, up to twice, instead of crashing — this happens more often than you'd expect. See "Groq free-tier rate limit" below for details.
 
-#### Evidence quality scoring 
+#### Evidence quality scoring
 
 Before the judge ever sees a snippet, `study_design` is set from PubMed's own official PublicationType field when available (authoritative — curated by PubMed/NLM's indexers), falling back to regex matching on the snippet text (e.g. `"randomized controlled trial"`, `"cohort study"`) only when PubMed didn't provide one. `sample_size` is regex-only (no PubMed field for it), left `None` when nothing matches.
 
@@ -199,24 +217,24 @@ Two different quality scales get built from `study_design`, at different points 
 
 **`source_credibility`** (`high` / `medium` / `low` / `unknown`) — set once, in `quality_extractor.py`, stored on the `EvidenceSnippet` itself, and shown to the judge as a quick-glance label alongside each citation:
 
-| source_credibility | study_design |
-|---|---|
-| high | systematic_review, meta_analysis, RCT |
-| medium | cohort_study, clinical_trial, pilot_trial, observational |
-| low | case_report, narrative_review |
-| unknown | no study design could be determined |
+| source_credibility | study_design                                             |
+| ------------------ | -------------------------------------------------------- |
+| high               | systematic_review, meta_analysis, RCT                    |
+| medium             | cohort_study, clinical_trial, pilot_trial, observational |
+| low                | case_report, narrative_review                            |
+| unknown            | no study design could be determined                      |
 
 **`QUALITY_TIER_NOTES`** — a separate, finer-grained ordering baked directly into the judge's prompt (`judge_agent.py`), which is what the judge is actually told to weigh evidence by:
 
-| tier | study_design | note |
-|---|---|---|
-| 1 (strongest) | systematic_review, meta_analysis | synthesizes many studies |
-| 2 | RCT | randomized, causal evidence |
-| 3 | cohort_study, clinical_trial | observational but structured, moderate |
-| 4 | pilot_trial, observational | smaller / less controlled |
-| 5 (weakest) | case_report, narrative_review | anecdotal or non-systematic |
+| tier          | study_design                     | note                                   |
+| ------------- | -------------------------------- | -------------------------------------- |
+| 1 (strongest) | systematic_review, meta_analysis | synthesizes many studies               |
+| 2             | RCT                              | randomized, causal evidence            |
+| 3             | cohort_study, clinical_trial     | observational but structured, moderate |
+| 4             | pilot_trial, observational       | smaller / less controlled              |
+| 5 (weakest)   | case_report, narrative_review    | anecdotal or non-systematic            |
 
-Both use the same underlying ordering — the standard evidence-hierarchy pyramid from evidence-based medicine (synthesis > randomized > observational > anecdotal), so the ordering itself is a common, recognized one, just a simplification of a full grading system like GRADE or Oxford CEBM. The difference is granularity: `source_credibility` collapses tiers 1+2 into "high" and tiers 3+4 into "medium," while `QUALITY_TIER_NOTES` keeps all 5 separate. The judge's prompt also adds *"within a tier, larger sample_size and more recent pub_date both increase weight,"* which lets it rank two studies at the same tier.
+Both use the same underlying ordering — the standard evidence-hierarchy pyramid from evidence-based medicine (synthesis > randomized > observational > anecdotal), so the ordering itself is a common, recognized one, just a simplification of a full grading system like GRADE or Oxford CEBM. The difference is granularity: `source_credibility` collapses tiers 1+2 into "high" and tiers 3+4 into "medium," while `QUALITY_TIER_NOTES` keeps all 5 separate. The judge's prompt also adds _"within a tier, larger sample_size and more recent pub_date both increase weight,"_ which lets it rank two studies at the same tier.
 
 Since both `study_design` detection and `sample_size` extraction are regex-based fallbacks, not guaranteed — a study design phrased unusually can come back `unknown`/`None`. The judge is explicitly told to treat that as lower-confidence evidence rather than ignore it, and to flag it in `evidence_gap_note` if it affects the verdict.
 
@@ -228,7 +246,7 @@ Since both `study_design` detection and `sample_size` extraction are regex-based
 
 #### Groq free-tier rate limit
 
-Groq's free tier caps total token usage at **8000 tokens-per-minute (TPM)** per API key, shared across *every* call the judge makes, including all `n_runs=4` calls `judge_debate_with_confidence` fires at once. This is a real, hard ceiling and it's easy to hit in normal use, not just edge cases:
+Groq's free tier caps total token usage at **8000 tokens-per-minute (TPM)** per API key, shared across _every_ call the judge makes, including all `n_runs=4` calls `judge_debate_with_confidence` fires at once. This is a real, hard ceiling and it's easy to hit in normal use, not just edge cases:
 
 - Calling the judge many times in quick succession (e.g. testing several different claims within a minute or two) can trigger a `429` rate-limit error.
 - `judge_debate`'s automatic retry (`_call_groq_with_retry`) waits the time Groq itself reports and retries up to twice, so a single hit usually recovers on its own — but that wait has been anywhere from ~45 seconds to several minutes on real runs, depending on how far over the limit the request was.
@@ -248,7 +266,7 @@ Defines common data structures such as `EvidenceSnippet`, `DebateTurn`, and `Jud
 
 ## Not yet started
 
-web app (Person 4), full PubHealth evaluation (Person 5).
+Full PubHealth evaluation (Person 5).
 
 ## Git workflow
 

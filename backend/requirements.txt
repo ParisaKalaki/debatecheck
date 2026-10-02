@@ -1,6 +1,8 @@
 fastapi
 uvicorn[standard]
 pydantic
+requests
+streamlit
 
 biopython
 sentence-transformers
