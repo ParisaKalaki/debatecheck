@@ -6,6 +6,16 @@ A traditional NLP baseline (keyword retrieval + stance classifier) is built alon
 
 > Course project — 36118 Applied Natural Language Processing, UTS, Spring 2026 (AT2)
 
+## Team Members
+
+| Person | Student Name | Student ID |
+|:------:|--------------|:----------:|
+| Person 1 | Parisasadat Kalaki | 25969686 |
+| Person 2 | Agam Singh Saini | XXXXXXXX |
+| Person 3 | Chenchira Bamrung | 26037349 |
+| Person 4 | Ezgi Kemer Alp | 25510658 |
+| Person 5 | Seyoung Kim | 25726050 |
+
 ## Setup
 
 ```bash
@@ -67,7 +77,7 @@ The frontend uses `http://127.0.0.1:8002` by default. Set `DEBATECHECK_API_URL` 
 - `backend/app/api/` FastAPI routes — DONE (Person 4)
 - `backend/app/core/` shared schemas (used by everyone)
 - `backend/tests/` saved test fixtures (real pipeline outputs)
-- `frontend/` web app — DONE (Person 4)
+- `frontend/` web app — DONE (Person 4, Person 1)
 - `evaluation/` benchmarking — not started (Person 5)
 
 ## What's done
@@ -265,6 +275,44 @@ Use these to develop and test without calling PubMed/Gemini every time.
 ### Shared schema (`backend/app/core/schemas.py`)
 
 Defines common data structures such as `EvidenceSnippet`, `DebateTurn`, and `JudgeVerdict`, so all components use the same format when passing information between them.
+
+### Web Application (`backend/app/api/` and `frontend/`)
+
+#### How it works — Backend
+
+```text
+User health claim
+        ↓
+FastAPI /verify endpoint
+        ↓
+Retrieve relevant PubMed evidence
+        ↓
+Run PRO vs CON debate
+        ↓
+Judge evaluates the debate and evidence
+        ↓
+Judge returns verdict + confidence + misinformation risk
+        ↓
+API returns transcript, evidence and verdict to the frontend
+```
+
+#### How it works — Frontend
+
+```text
+User enters a health claim
+        ↓
+Streamlit sends the claim to the FastAPI backend
+        ↓
+Receive debate transcript + PubMed evidence + judge verdict
+        ↓
+Display PRO and CON arguments as a live-style debate chat
+        ↓
+Show Moderator Ruling
+Verdict + Consensus Agreement + Misinformation Risk
+        ↓
+Detailed Clinical Dossier
+Judge reasoning + limitations + counter-evidence + PubMed literature
+```
 
 ## Not yet started
 
