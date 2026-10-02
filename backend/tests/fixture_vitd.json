@@ -72,7 +72,7 @@
   {
     "id": "E-42270958-7",
     "text": "Maintaining sufficient 25(OH) vitamin D concentrations may represent a simple and potentially relevant strategy to optimize post-vaccination protection.",
-    "stance": "support",
+    "stance": "neutral",
     "study_design": "observational",
     "sample_size": null,
     "pub_date": "2026",
@@ -438,5 +438,65 @@
     "pub_date": "2026",
     "source_credibility": "high",
     "source_url": "https://pubmed.ncbi.nlm.nih.gov/42037591/"
+  },
+  {
+    "id": "E-41962688-0",
+    "text": "Vitamin supplementation has recently shown a dramatic increase in usage, especially during the COVID-19 pandemic, as a potential aid in preventing, treating, and recovering from infection. In dermatology, vitamin supplements may be used to support the management of a myriad of conditions.",
+    "stance": "neutral",
+    "study_design": "narrative_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "low",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/41962688/"
+  },
+  {
+    "id": "E-41962688-1",
+    "text": "A common misconception is that vitamins are safe to consume and that taking more will improve overall health; however, hypervitaminosis may lead to harmful effects. We provide an overview illustrating the use of vitamins A, D, E, niacin, and biotin in dermatology and the potential adverse effects of hypervitaminosis.",
+    "stance": "neutral",
+    "study_design": "narrative_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "low",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/41962688/"
+  },
+  {
+    "id": "E-41922045-0",
+    "text": "Vitamin D acts as a micronutrient, hormone, and immunomodulator. While well known for supporting bone health and preventing rickets, researchers are now exploring its potential to help fight infection, including COVID-19.",
+    "stance": "neutral",
+    "study_design": "narrative_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "low",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/41922045/"
+  },
+  {
+    "id": "E-41922045-1",
+    "text": "Certain laboratory studies and observational research suggest that vitamin D supplementation may lower the risk of developing serious illnesses. Unfortunately, clinical studies have generated mixed results.",
+    "stance": "neutral",
+    "study_design": "narrative_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "low",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/41922045/"
+  },
+  {
+    "id": "E-41922045-2",
+    "text": "This gap between laboratory findings and real-world outcomes highlights the need for high-quality research in the field. Another promising domain is the utilization of vitamin D analogs that can provide similar or even better benefits than native vitamin D, but with fewer side effects.",
+    "stance": "neutral",
+    "study_design": "narrative_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "low",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/41922045/"
+  },
+  {
+    "id": "E-41922045-3",
+    "text": "Additionally, the standardization of vitamin D measurement from biologic samples in clinical and research laboratories must be improved to successfully manage individual patients and clinical research. All these aspects are dealt with in detail in this chapter.",
+    "stance": "neutral",
+    "study_design": "narrative_review",
+    "sample_size": null,
+    "pub_date": "2026",
+    "source_credibility": "low",
+    "source_url": "https://pubmed.ncbi.nlm.nih.gov/41922045/"
   }
 ]

@@ -47,36 +47,37 @@ ROLE = {
 
 # ---------- Prompts ----------
 
-OPENING_PROMPT = """You are the {agent} agent in a structured debate about a health claim.
-Your job is to {role}.
+OPENING_PROMPT = """
+You are the {agent} agent debating a health claim. Your role is to {role}.
 
-CLAIM: "{claim}"
+Claim: "{claim}"
 
-You may ONLY use the evidence snippets below. Each snippet has an ID in square brackets,
-followed by its stance and quality metadata.
+Use only the evidence snippets below (each with an ID, stance, and metadata).
 
 {evidence}
 
-Rules:
-1. Every point MUST cite at least one snippet ID from the list above. Points without a valid ID are discarded.
-2. Never invent studies, numbers, or findings that are not stated in the cited snippet.
-3. Do not overstate evidence. If a study is observational, small, or its sample size is not stated, do not present it as definitive.
-4. Prioritise higher-quality evidence (systematic reviews, meta-analyses, RCTs, large samples).
-5. Use neutral snippets only if they genuinely help your side, and never misrepresent them.
-6. Put snippet IDs ONLY in "cited_ids", never inside the point text.
-7. Describe certainty, effect size, and study quality exactly as the snippet states them (e.g. never turn "moderate-certainty" into "high-certainty").
-8. Give 2-4 concise points.
+Guidelines:
+- Cite at least one snippet ID per point (IDs go in "cited_ids", not in the text).
+- Do not fabricate data.
+- Prioritize high‑quality evidence.
+- Keep each point short (1‑2 sentences, under 30 words).
 
-Return JSON in this format:
-{{"points": [{{"text": "your point", "cited_ids": ["snippet_id"]}}]}}
+Tone: Speak like two smart colleagues chatting over coffee. Use first‑person ("I", "we") and a friendly, conversational style. Directly address the other debater (e.g., "I think you're right...", "Actually, here's what the data shows...").
+
+Examples:
+Stiff: "A systematic review and network meta-analysis of randomized controlled trials involving children under 18 years old found that high-dose vitamin D demonstrated the greatest potential effect in preventing respiratory infections compared to other nutritional supplements and placebo."
+Conversational: "Based on this large review of clinical trials, I don't think this is harmless — high-dose vitamin D actually reduced kids' respiratory infections more than a placebo."
+
+Return JSON: {{"points": [{{"text": "your point", "cited_ids": ["snippet_id"]}}]}}
 """
 
-REBUTTAL_PROMPT = """You are the {agent} agent in a structured debate about a health claim.
-Your job is to {role}. This is the REBUTTAL round.
+# Opening prompt defined above
 
-CLAIM: "{claim}"
+REBUTTAL_PROMPT = """You are a {agent} debater. Your role is to {role} in this rebuttal round.
 
-YOUR EVIDENCE:
+Claim: "{claim}"
+
+Your evidence:
 {own_evidence}
 
 OPPONENT'S OPENING ARGUMENT:
@@ -86,14 +87,27 @@ EVIDENCE THE OPPONENT CITED:
 {opp_evidence}
 
 Rules:
-1. Respond directly to the opponent's points.
-2. Check whether the opponent misrepresented any snippet they cited (e.g. overstated results,
-   wrong outcome, ignored study limitations or low quality). If so, say so and cite that snippet ID.
-3. Every point MUST cite at least one ID from YOUR EVIDENCE or EVIDENCE THE OPPONENT CITED. Points without a valid ID are discarded.
-4. Never invent studies, numbers, or findings not stated in the cited snippet.
-5. Put snippet IDs ONLY in "cited_ids", never inside the point text.
-6. Describe certainty, effect size, and study quality exactly as the snippet states them (e.g. never turn "moderate-certainty" into "high-certainty").
-7. Give 2-3 concise points.
+1. Respond directly to the opponent's points. Point out where they overstated findings, ignored study limitations, or overlooked counter-evidence.
+2. Every point MUST cite at least one ID from YOUR EVIDENCE or EVIDENCE THE OPPONENT CITED. Points without a valid ID are discarded.
+3. Never invent studies, numbers, or findings not stated in the cited snippet.
+4. Put snippet IDs ONLY in "cited_ids", NEVER inside the point text itself.
+5. Describe certainty, effect size, and study quality accurately as the snippet states them.
+
+TONE & STYLE -- CONVERSATIONAL, FRIENDLY DEBATE:
+Speak like a colleague over coffee. Directly address the opponent (e.g., "I think you're wrong about that...", "Actually, here's the thing...", "Hold on, you're only looking at half the picture..."). Keep points short (1-2 sentences, under 30 words).
+
+STUDY THESE EXAMPLES TO MATCH THE CONVERSATIONAL PATTERN:
+Example 1:
+- STIFF (DO NOT WRITE LIKE THIS): "Direct comparison meta-analysis has shown no statistically significant differences between low-dose vitamin D and placebo regarding the prevention of childhood respiratory infections."
+- CONVERSATIONAL (WRITE LIKE THIS): "Actually, I think you're wrong about that -- a direct comparison study found no real difference between low-dose vitamin D and a placebo. The dose really matters here, and you're only looking at the high-dose result."
+
+Example 2:
+- STIFF (DO NOT WRITE LIKE THIS): "The opponent's assertion regarding universal prevention is undermined by Cochrane systematic review data demonstrating merely low-certainty evidence of modest effect size."
+- CONVERSATIONAL (WRITE LIKE THIS): "You're overstating your case -- that Cochrane review you cited warns that the evidence is low-certainty and only found a slight drop in doctor visits."
+
+Example 3:
+- STIFF (DO NOT WRITE LIKE THIS): "The evidence cited by the affirmative is limited by observational methodology, which precludes causal attribution."
+- CONVERSATIONAL (WRITE LIKE THIS): "Hold on -- that study was just observational, not a controlled trial. You can't claim vitamin D caused that outcome when other lifestyle factors weren't accounted for."
 
 Return JSON in this format:
 {{"points": [{{"text": "your point", "cited_ids": ["snippet_id"]}}]}}
