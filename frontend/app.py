@@ -2,7 +2,7 @@
 DebateCheck - Streamlit Frontend.
 
 Start the FastAPI backend first (from backend/):
-    uvicorn app.api.main:app --reload
+     uvicorn app.api.main:app --reload --port 8002
 
 Then start this frontend (from the repository root):
     streamlit run frontend/app.py

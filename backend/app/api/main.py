@@ -2,7 +2,7 @@
 DebateCheck - Person 4 FastAPI backend.
 
 Run from the repository's backend/ folder:
-    uvicorn app.api.main:app --reload
+        uvicorn app.api.main:app --reload --port 8002
 
 This API connects the completed Person 1 -> Person 2 -> Person 3 pipeline:
 claim -> PubMed evidence -> PRO/CON debate -> judge verdict.
