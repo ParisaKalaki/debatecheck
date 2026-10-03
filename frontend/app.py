@@ -697,7 +697,7 @@ def render_moderator_card(verdict: dict):
         f'<div class="moderator-title">{html.escape(final_answer)}</div>'
         f'<div class="moderator-metrics-grid">'
         f'<div class="moderator-metric-box">'
-        f'<div class="moderator-metric-label">Verdict Verdict</div>'
+        f'<div class="moderator-metric-label">Verdict</div>'
         f'<div class="moderator-metric-value" style="color: {status_color};">{status_icon} {html.escape(verdict_label)}</div>'
         f'</div>'
         f'<div class="moderator-metric-box">'
