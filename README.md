@@ -11,7 +11,7 @@ A traditional NLP baseline (keyword retrieval + stance classifier) is built alon
 | Person | Student Name | Student ID |
 |:------:|--------------|:----------:|
 | Person 1 | Parisasadat Kalaki | 25969686 |
-| Person 2 | Agam Singh Saini | XXXXXXXX |
+| Person 2 | Agam Singh Saini | 25531702 |
 | Person 3 | Chenchira Bamrung | 26037349 |
 | Person 4 | Ezgi Kemer Alp | 25510658 |
 | Person 5 | Seyoung Kim | 25726050 |
