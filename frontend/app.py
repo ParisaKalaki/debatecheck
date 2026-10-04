@@ -417,6 +417,170 @@ html, body, [class*="css"] {
     align-items: center;
     gap: 6px;
 }
+
+/* ===== Theme-agnostic overrides (readable in BOTH light and dark Streamlit themes) =====
+   Streamlit does not set data-theme on the page, so the [data-theme="dark"] rules above
+   never apply. These rules use semi-transparent tints and inherit the theme's text colour. */
+
+.brand-title {
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.arena-header {
+    background: rgba(99, 102, 241, 0.06);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.arena-badge {
+    background: rgba(99, 102, 241, 0.18);
+    color: #818cf8;
+    border: 1px solid rgba(99, 102, 241, 0.4);
+}
+
+.chat-bubble-pro {
+    background: rgba(59, 130, 246, 0.10);
+    border: 1.5px solid rgba(59, 130, 246, 0.45);
+    color: inherit;
+}
+
+.chat-bubble-con {
+    background: rgba(244, 63, 94, 0.10);
+    border: 1.5px solid rgba(244, 63, 94, 0.45);
+    color: inherit;
+}
+
+.chat-header {
+    border-bottom: 1px solid rgba(128, 128, 128, 0.25);
+}
+
+.chat-inline-source,
+.chat-bubble-pro .chat-inline-source {
+    background: #2563eb;
+    border: 1px solid #2563eb;
+    color: #ffffff !important;
+}
+
+.chat-bubble-con .chat-inline-source {
+    background: #e11d48;
+    border: 1px solid #e11d48;
+    color: #ffffff !important;
+}
+
+.moderator-card {
+    background: rgba(99, 102, 241, 0.07);
+}
+
+.moderator-metric-box {
+    background: rgba(99, 102, 241, 0.10);
+    border: 1px solid rgba(99, 102, 241, 0.35);
+    color: inherit;
+}
+
+.moderator-metric-label {
+    opacity: 0.85;
+}
+
+/* Debate conclusion card */
+.conclusion-card {
+    margin: 0 0 1.75rem 0;
+    border-radius: 18px;
+    border: 2px solid rgba(34, 197, 94, 0.6);
+    background: rgba(34, 197, 94, 0.07);
+    padding: 22px 26px;
+}
+
+.conclusion-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: #16a34a;
+    color: #ffffff !important;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.conclusion-answer {
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.45;
+    margin: 14px 0 8px 0;
+}
+
+.conclusion-summary {
+    font-size: 1rem;
+    line-height: 1.65;
+    margin-bottom: 10px;
+}
+
+.conclusion-caveat {
+    font-size: 0.92rem;
+    padding: 9px 13px;
+    border-radius: 10px;
+    background: rgba(34, 197, 94, 0.12);
+}
+
+/* Quick-answer (background knowledge) card */
+.bg-card {
+    margin: 0.5rem 0 1.5rem 0;
+    border-radius: 18px;
+    border: 2px solid #f59e0b;
+    background: linear-gradient(145deg, rgba(245, 158, 11, 0.07) 0%, rgba(251, 191, 36, 0.03) 100%);
+    padding: 22px 26px;
+    box-shadow: 0 8px 30px rgba(245, 158, 11, 0.08);
+}
+
+.bg-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #ffffff !important;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.bg-headline {
+    font-size: 1.28rem;
+    font-weight: 700;
+    line-height: 1.45;
+    margin: 14px 0 8px 0;
+}
+
+.bg-takeaway {
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 10px;
+}
+
+.bg-points {
+    margin: 0 0 12px 1.1rem;
+    padding: 0;
+    line-height: 1.65;
+}
+
+.bg-note {
+    font-size: 0.92rem;
+    padding: 9px 13px;
+    border-radius: 10px;
+    background: rgba(245, 158, 11, 0.12);
+    margin-bottom: 8px;
+}
+
+.bg-disclaimer {
+    font-size: 0.8rem;
+    opacity: 0.75;
+    margin-top: 6px;
+}
 </style>"""
 
 
@@ -682,10 +846,10 @@ def render_moderator_card(verdict: dict):
 
     v_lower = verdict_label.lower()
     if any(w in v_lower for w in ["support", "true", "proven", "affirm"]):
-        status_color = "#10b981"
+        status_color = "#22c55e"
         status_icon = SVG_ICONS["check_circle"]
     elif any(w in v_lower for w in ["refute", "false", "debunk", "unsupported", "contradict"]):
-        status_color = "#ef4444"
+        status_color = "#f43f5e"
         status_icon = SVG_ICONS["x_circle"]
     else:
         status_color = "#f59e0b"
@@ -738,6 +902,75 @@ def render_evidence_card(item: dict):
             st.link_button("View PubMed Study ↗", source_url)
 
 
+def render_claim_check_note(analysis: dict | None):
+    """Show how the claim was interpreted and searched, for transparency."""
+    if not analysis:
+        return
+    checkable = analysis.get("checkable_claim") or ""
+    query = analysis.get("search_query_used") or analysis.get("pubmed_query") or ""
+    if analysis.get("analysis_fallback"):
+        st.caption("Claim analysis was unavailable, so the claim was searched as written.")
+    st.caption(f"Checked against the evidence as: \u201c{checkable}\u201d")
+    if query:
+        st.caption(f"PubMed search used: {query}")
+
+
+def render_background_card(background: dict | None):
+    """Plain-language quick answer from general medical knowledge.
+    Visually and textually separate from the evidence-based verdict."""
+    if not background:
+        return
+
+    points_html = "".join(
+        f"<li>{html.escape(p)}</li>" for p in background.get("explanation_points") or []
+    )
+    misconception = background.get("misconception")
+    misconception_html = (
+        f'<div class="bg-note"><strong>Common misconception:</strong> {html.escape(misconception)}</div>'
+        if misconception else ""
+    )
+    verdict_note = background.get("verdict_note")
+    differs_html = (
+        f'<div class="bg-note"><strong>Note:</strong> this background answer differs from the '
+        f'evidence-based verdict below. {html.escape(verdict_note or "")}</div>'
+        if background.get("differs_from_evidence_verdict") else ""
+    )
+
+    card_html = (
+        f'<div class="bg-card">'
+        f'<div class="bg-label">{SVG_ICONS["brain"]} Quick Answer \u2022 General Medical Knowledge</div>'
+        f'<div class="bg-headline">{html.escape(background.get("headline", ""))}</div>'
+        f'<div class="bg-takeaway">{html.escape(background.get("takeaway", ""))}</div>'
+        f'<ul class="bg-points">{points_html}</ul>'
+        f'{misconception_html}'
+        f'{differs_html}'
+        f'<div class="bg-disclaimer">AI-generated background from general medical knowledge, not from '
+        f'the retrieved studies. The evidence-based verdict appears after the debate below.</div>'
+        f'</div>'
+    )
+    st.markdown(card_html, unsafe_allow_html=True)
+
+
+def render_conclusion_card(conclusion: dict | None):
+    """Plain-language conclusion of the debate (built only from the debate and verdict)."""
+    if not conclusion:
+        return
+    caveat = conclusion.get("caveat")
+    caveat_html = (
+        f'<div class="conclusion-caveat"><strong>Keep in mind:</strong> {html.escape(caveat)}</div>'
+        if caveat else ""
+    )
+    card_html = (
+        f'<div class="conclusion-card">'
+        f'<div class="conclusion-label">{SVG_ICONS["scale"]} Debate Conclusion \u2022 In Plain Language</div>'
+        f'<div class="conclusion-answer">{html.escape(conclusion.get("answer", ""))}</div>'
+        f'<div class="conclusion-summary">{html.escape(conclusion.get("summary", ""))}</div>'
+        f'{caveat_html}'
+        f'</div>'
+    )
+    st.markdown(card_html, unsafe_allow_html=True)
+
+
 # ---------- Main Result Rendering Function ----------
 
 def render_result(data: dict, live: bool = True):
@@ -753,6 +986,21 @@ def render_result(data: dict, live: bool = True):
         item.get("id"): item for item in evidence if item.get("id")
     }
     ordered_transcript = sort_transcript_turns(transcript)
+
+    # ==========================================
+    # 0. QUICK ANSWER (BACKGROUND KNOWLEDGE) + HOW THE CLAIM WAS CHECKED
+    # ==========================================
+    render_background_card(data.get("background"))
+    render_claim_check_note(data.get("analysis"))
+
+    if not evidence:
+        st.warning(
+            "**Unverifiable with the available PubMed evidence.** No relevant studies were "
+            "retrieved for this claim, so no evidence-based debate or verdict could be produced. "
+            "The quick answer above is general background knowledge only. Try rephrasing the "
+            "claim more specifically."
+        )
+        return
 
     # ==========================================
     # 1. LIVE CHAT CONVERSATION (PRIMARY FOCUS)
@@ -792,6 +1040,7 @@ def render_result(data: dict, live: bool = True):
     # 2. MODERATOR VERDICT (BELOW CHAT)
     # ==========================================
     render_moderator_card(verdict)
+    render_conclusion_card(data.get("conclusion"))
 
     # ==========================================
     # 3. SECONDARY / COLLAPSED SECTIONS
@@ -832,7 +1081,8 @@ def render_result(data: dict, live: bool = True):
             raw_reasoning = verdict.get("reasoning") or "No reasoning returned."
             st.markdown(replace_citation_ids_markdown(raw_reasoning, evidence_by_id))
     with col2:
-        with st.expander("Key Counter-Evidence", expanded=False):
+        with st.expander("Strongest Evidence Against This Verdict", expanded=False):
+            st.caption("The opposing side's best point - shown so you can judge whether the verdict could be wrong.")
             raw_counter = verdict.get("top_counter_evidence") or "No counter-evidence returned."
             st.markdown(replace_citation_ids_markdown(raw_counter, evidence_by_id))
 
@@ -894,7 +1144,7 @@ if submitted:
     if len(claim.strip()) < 5:
         st.warning("Please enter a specific health claim.")
     else:
-        with st.spinner("Retrieving PubMed evidence and running the PRO vs CON debate..."):
+        with st.spinner("Analysing the claim, retrieving PubMed evidence and running the PRO vs CON debate..."):
             try:
                 response = requests.post(
                     VERIFY_URL,

@@ -52,3 +52,33 @@ class JudgeVerdict(BaseModel):
         """
         phrase = _FINAL_ANSWER_PHRASES[self.verdict]
         return f"Based on the evidence, {phrase} ({self.confidence:.0%} confidence)."
+
+
+class ClaimAnalysis(BaseModel):
+    """Output of the claim analyzer (app/retrieval/claim_analyzer.py)."""
+    original_claim: str
+    checkable_claim: str                 # same assertion, restated in testable scientific terms
+    pubmed_query: str                    # query proposed by the analyzer
+    intervention_terms: list[str]        # used by the relevance filter
+    outcome_terms: list[str]
+    search_query_used: Optional[str] = None   # query that actually returned results
+    analysis_fallback: bool = False           # True if the analyzer failed and raw-claim fallback was used
+
+
+class BackgroundExplainer(BaseModel):
+    """Plain-language background answer from general medical knowledge.
+    Shown separately from (and never merged into) the evidence-based JudgeVerdict."""
+    headline: str
+    takeaway: str
+    explanation_points: list[str]
+    misconception: Optional[str] = None
+    differs_from_evidence_verdict: bool = False
+    verdict_note: Optional[str] = None
+
+
+class DebateConclusion(BaseModel):
+    """Plain-language conclusion of the debate, built ONLY from the transcript and the
+    judge's verdict (no outside knowledge). Never changes the verdict."""
+    answer: str                    # one-sentence plain answer, consistent with the verdict
+    summary: str                   # what each side argued and what decided it
+    caveat: Optional[str] = None   # main limitation of the evidence

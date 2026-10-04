@@ -1,33 +1,36 @@
 """
-Step 6: Consolidation — the single entry point Person 2's debate agents will call.
+Step 6: Consolidation — the single entry point for the rest of the system.
 
-Given a health claim, this runs the full evidence pipeline internally
-(search → fetch → filter → chunk → quality metadata → stance) and returns
-a clean list of EvidenceSnippet objects matching the shared schema.
+Given a health claim, this runs the full evidence pipeline internally:
+analyse claim → search → fetch → filter → chunk → quality metadata → stance
+and returns a clean list of EvidenceSnippet objects matching the shared schema.
 
-Person 2 doesn't need to know or care about the 5 steps inside —
-they just call get_evidence_for_claim(claim) and get snippets back.
+Two entry points:
+- get_evidence_with_analysis(claim) -> (ClaimAnalysis, list[EvidenceSnippet])   # used by the API
+- get_evidence_for_claim(claim)     -> list[EvidenceSnippet]                     # unchanged signature
 
-Uses package imports (app.*) so it works when imported from FastAPI, the agents,
-or evaluation. Run the test from the backend/ folder:
+Run the test from the backend/ folder:
     python -m app.retrieval.evidence_pipeline
 """
 
 import re
 
-from app.core.schemas import EvidenceSnippet
+from app.core.schemas import ClaimAnalysis, EvidenceSnippet
+from app.retrieval.claim_analyzer import analyze_claim
 from app.retrieval.pubmed_search import search_pubmed
 from app.retrieval.pubmed_fetch import fetch_abstracts
 from app.retrieval.snippet_chunker import chunk_abstract
 from app.retrieval.quality_extractor import enrich_snippet
 from app.retrieval.stance_classifier import classify_snippets_stance
 
+HUMAN_FILTER = " AND humans[mh]"
+
 
 def extract_claim_keywords(claim: str) -> tuple[list[str], list[str]]:
     """
+    FALLBACK ONLY (used if the claim analyzer fails).
     Splits the claim into two keyword groups — roughly 'subject/intervention'
-    (first half) and 'outcome' (second half) — so relevance checking can
-    require a match from BOTH sides, not just any two words from one side.
+    (first half) and 'outcome' (second half).
     """
     stopwords = {"a", "an", "the", "is", "are", "do", "does", "of", "for",
                  "to", "and", "or", "improve", "improves", "prevent",
@@ -47,38 +50,70 @@ def extract_claim_keywords(claim: str) -> tuple[list[str], list[str]]:
 def is_relevant(paper: dict, subject_terms: list[str], outcome_terms: list[str]) -> bool:
     """
     Requires at least one match from subject/intervention terms AND
-    at least one match from outcome terms. Uses stem matching (checks
-    if the term, minus a trailing 's', appears as a substring) to
-    handle singular/plural mismatches like 'infection' vs 'infections'.
+    at least one match from outcome terms. Uses stem matching (term minus a
+    trailing 's') to handle singular/plural mismatches.
     """
     text = (paper["title"] + " " + paper["abstract"]).lower()
 
     def stem_match(term: str, text: str) -> bool:
-        stem = term.rstrip("s")  # "infections" -> "infection", still matches "infections" too
-        return stem in text
+        stem = term.rstrip("s")
+        return bool(stem) and stem in text
 
     has_subject = any(stem_match(term, text) for term in subject_terms)
     has_outcome = any(stem_match(term, text) for term in outcome_terms)
     return has_subject and has_outcome
 
 
-def get_evidence_for_claim(claim: str, retmax: int = 8) -> list[EvidenceSnippet]:
+def _build_analysis(claim: str) -> ClaimAnalysis:
+    analysis = analyze_claim(claim)
+    if analysis and analysis.intervention_terms and analysis.outcome_terms:
+        return analysis
+
     subject_terms, outcome_terms = extract_claim_keywords(claim)
+    return ClaimAnalysis(
+        original_claim=claim,
+        checkable_claim=claim,
+        pubmed_query=claim,
+        intervention_terms=subject_terms,
+        outcome_terms=outcome_terms,
+        analysis_fallback=True,
+    )
 
-    ids = search_pubmed(claim, retmax=retmax)
+
+def _search_with_fallbacks(analysis: ClaimAnalysis, retmax: int) -> tuple[str, list[str]]:
+    """Try the most precise query first, then progressively looser ones."""
+    queries = [f"({analysis.pubmed_query}){HUMAN_FILTER}", analysis.pubmed_query, analysis.original_claim]
+
+    for q in dict.fromkeys(queries):  # de-duplicate, keep order
+        ids = search_pubmed(q, retmax=retmax)
+        if ids:
+            return q, ids
+    return queries[-1], []
+
+
+def get_evidence_with_analysis(claim: str, retmax: int = 8) -> tuple[ClaimAnalysis, list[EvidenceSnippet]]:
+    analysis = _build_analysis(claim)
+
+    query_used, ids = _search_with_fallbacks(analysis, retmax)
+    analysis.search_query_used = query_used
+    if not ids:
+        return analysis, []
+
     papers = fetch_abstracts(ids)
-
-    relevant_papers = [p for p in papers if is_relevant(p, subject_terms, outcome_terms)]
+    relevant_papers = [
+        p for p in papers
+        if is_relevant(p, analysis.intervention_terms, analysis.outcome_terms)
+    ]
 
     all_snippets = []
     for paper in relevant_papers:
         snippets = chunk_abstract(paper)
         pubmed_types = paper.get("pubmed_types", [])
         snippets = [enrich_snippet(s, pubmed_types) for s in snippets]
-        snippets = classify_snippets_stance(claim, snippets)
+        # Stance is judged against the checkable version of the claim
+        snippets = classify_snippets_stance(analysis.checkable_claim, snippets)
         all_snippets.extend(snippets)
 
-    # Convert raw dicts into validated EvidenceSnippet objects
     evidence_snippets = []
     for s in all_snippets:
         evidence_snippets.append(EvidenceSnippet(
@@ -92,14 +127,22 @@ def get_evidence_for_claim(claim: str, retmax: int = 8) -> list[EvidenceSnippet]
             source_url=f"https://pubmed.ncbi.nlm.nih.gov/{s['pmid']}/" if "pmid" in s else None,
         ))
 
-    return evidence_snippets
+    return analysis, evidence_snippets
+
+
+def get_evidence_for_claim(claim: str, retmax: int = 8) -> list[EvidenceSnippet]:
+    """Unchanged signature (used by the baseline and evaluation)."""
+    return get_evidence_with_analysis(claim, retmax)[1]
 
 
 if __name__ == "__main__":
-    claim = "vitamin D supplements prevent respiratory infections"
-    evidence = get_evidence_for_claim(claim, retmax=5)
+    claim = "Vitamin D is present in the sun during entire day"
+    analysis, evidence = get_evidence_with_analysis(claim, retmax=8)
 
-    print(f"Got {len(evidence)} evidence snippets for: '{claim}'\n")
+    print(f"Checkable claim: {analysis.checkable_claim}")
+    print(f"Query used:      {analysis.search_query_used}")
+    print(f"Fallback used:   {analysis.analysis_fallback}\n")
+    print(f"Got {len(evidence)} evidence snippets\n")
     for e in evidence:
         print(f"[{e.id}] stance={e.stance} | design={e.study_design} | credibility={e.source_credibility}")
         print(f"  {e.text[:100]}...\n")

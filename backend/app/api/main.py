@@ -4,41 +4,51 @@ DebateCheck - Person 4 FastAPI backend.
 Run from the repository's backend/ folder:
         uvicorn app.api.main:app --reload --port 8002
 
-This API connects the completed Person 1 -> Person 2 -> Person 3 pipeline:
-claim -> PubMed evidence -> PRO/CON debate -> judge verdict.
+Pipeline:
+claim -> claim analysis -> PubMed evidence -> PRO/CON debate -> judge verdict
+      -> background explainer (general knowledge, shown separately from the verdict)
 """
 
+import json
+import os
+from pathlib import Path
+from typing import Optional
+
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from app.agents.debate_graph import run_debate
-from app.core.schemas import DebateTurn, EvidenceSnippet, JudgeVerdict
+from app.agents.debate_summary import generate_conclusion
+from app.agents.explainer import generate_background
+from app.core.schemas import (
+    BackgroundExplainer,
+    ClaimAnalysis,
+    DebateConclusion,
+    DebateTurn,
+    EvidenceSnippet,
+    JudgeVerdict,
+)
 from app.judge.judge_agent import judge_debate_with_confidence
-from app.retrieval.evidence_pipeline import get_evidence_for_claim
-import json
-from pathlib import Path
-import os
-from dotenv import load_dotenv
+from app.retrieval.evidence_pipeline import get_evidence_with_analysis
 
 # Explicitly load .env from project root
 load_dotenv(dotenv_path=Path(__file__).resolve().parents[3] / ".env", override=True)
 
-# Set to True while testing the UI to avoid hitting rate limits.
-# Set back to False before final submission/demo.
+# Set DEBATECHECK_USE_FIXTURE=true while testing the UI to avoid hitting rate limits.
 USE_FIXTURE = os.getenv("DEBATECHECK_USE_FIXTURE", "false").lower() == "true"
 print(f"[DebateCheck] USE_FIXTURE = {USE_FIXTURE}")
 
-
-
-FIXTURE_PATH = Path(__file__).resolve().parents[2] / "tests" / "fixture_vitd_debate.json"
-EVIDENCE_FIXTURE_PATH = Path(__file__).resolve().parents[2] / "tests" / "fixture_vitd.json"
-VERDICT_FIXTURE_PATH = Path(__file__).resolve().parents[2] / "tests" / "fixture_vitd_verdict.json"
+TESTS_DIR = Path(__file__).resolve().parents[2] / "tests"
+FIXTURE_PATH = TESTS_DIR / "fixture_vitd_debate.json"
+EVIDENCE_FIXTURE_PATH = TESTS_DIR / "fixture_vitd.json"
+VERDICT_FIXTURE_PATH = TESTS_DIR / "fixture_vitd_verdict.json"
 
 app = FastAPI(
     title="DebateCheck API",
     description="Evidence-grounded multi-agent health claim verification.",
-    version="1.0.0",
+    version="1.1.0",
 )
 
 # Suitable for local development. Restrict origins before a public deployment.
@@ -57,28 +67,42 @@ class ClaimRequest(BaseModel):
 
 
 class VerificationResponse(BaseModel):
-    claim: str
+    claim: str                                        # original user claim
+    analysis: Optional[ClaimAnalysis] = None          # how the claim was checked (None in fixture mode)
     verdict: JudgeVerdict
     transcript: list[DebateTurn]
     evidence: list[EvidenceSnippet]
     citation_log: list[dict]
     evidence_count: int
+    background: Optional[BackgroundExplainer] = None  # general knowledge, separate from verdict
+    conclusion: Optional[DebateConclusion] = None     # plain-language summary of the debate result
+
+
+def no_evidence_verdict() -> JudgeVerdict:
+    """Rule-based verdict used when retrieval finds no relevant PubMed evidence.
+    Not produced by the judge LLM; the UI hides confidence and risk for this case."""
+    return JudgeVerdict(
+        reasoning=(
+            "No relevant PubMed studies were retrieved for this claim, so no evidence-based "
+            "debate or judgement was possible."
+        ),
+        verdict="Unverifiable",
+        confidence=1.0,
+        misinformation_risk="Medium",
+        risk_reason="Risk could not be assessed because no relevant evidence was retrieved.",
+        top_counter_evidence="None - no evidence was retrieved.",
+        evidence_gap_note="The PubMed search returned no studies that address this claim directly.",
+    )
 
 
 @app.get("/")
 def root():
-    return {
-        "name": "DebateCheck API",
-        "status": "running",
-        "docs": "/docs",
-    }
+    return {"name": "DebateCheck API", "status": "running", "docs": "/docs"}
 
 
 @app.get("/health")
 def health():
     return {"status": "ok", "use_fixture": USE_FIXTURE}
-
-
 
 
 @app.post("/verify", response_model=VerificationResponse)
@@ -91,44 +115,54 @@ def verify_claim(request: ClaimRequest):
     try:
         if USE_FIXTURE:
             # ---- Fixture mode: zero API calls, instant response ----
-            evidence_raw = json.loads(EVIDENCE_FIXTURE_PATH.read_text())
-            evidence = [EvidenceSnippet(**e) for e in evidence_raw]
-
+            evidence = [EvidenceSnippet(**e) for e in json.loads(EVIDENCE_FIXTURE_PATH.read_text())]
             debate_raw = json.loads(FIXTURE_PATH.read_text())
             transcript = [DebateTurn(**t) for t in debate_raw["transcript"]]
             citation_log = debate_raw["citation_log"]
-
             verdict = JudgeVerdict(**json.loads(VERDICT_FIXTURE_PATH.read_text()))
             claim = debate_raw["claim"]
+            analysis = None
+            background = None
+            conclusion = None
 
         else:
             # ---- Live mode: real pipeline ----
-            evidence = get_evidence_for_claim(claim, retmax=request.retmax)
+            analysis, evidence = get_evidence_with_analysis(claim, retmax=request.retmax)
+
+            checked_claim = analysis.checkable_claim
 
             if not evidence:
-                raise HTTPException(
-                    status_code=422,
-                    detail=(
-                        "No sufficiently relevant PubMed evidence was retrieved for this "
-                        "claim. Try rewriting the claim more specifically."
-                    ),
+                # No relevant evidence: skip debate + judge (nothing to argue from) and
+                # return a rule-based "Unverifiable" verdict instead of an error.
+                transcript, citation_log = [], []
+                verdict = no_evidence_verdict()
+                conclusion = None
+            else:
+                # Debate and judge work on the checkable version of the claim
+                debate = run_debate(checked_claim, evidence)
+                transcript = debate["transcript"]
+                citation_log = debate["citation_log"]
+
+                verdict = judge_debate_with_confidence(
+                    claim=checked_claim, transcript=transcript, evidence=evidence, verbose=False,
                 )
 
-            debate = run_debate(claim, evidence)
-            transcript = debate["transcript"]
-            citation_log = debate["citation_log"]
+                # Plain-language conclusion of the debate (from transcript + verdict only)
+                conclusion = generate_conclusion(checked_claim, transcript, verdict)
 
-            verdict = judge_debate_with_confidence(
-                claim=claim, transcript=transcript, evidence=evidence, verbose=False,
-            )
+            # Separate, labelled background answer (never alters the verdict)
+            background = generate_background(claim, checked_claim, verdict.verdict)
 
         return VerificationResponse(
             claim=claim,
+            analysis=analysis,
             verdict=verdict,
             transcript=transcript,
             evidence=evidence,
             citation_log=citation_log,
             evidence_count=len(evidence),
+            background=background,
+            conclusion=conclusion,
         )
 
     except HTTPException:
