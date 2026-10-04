@@ -50,8 +50,8 @@ python -m app.judge.judge_agent               # judge agent test (uses saved fix
 Running a file directly (e.g. `python evidence_pipeline.py` from inside `retrieval/`) will fail with import errors.
 
 ## Run the web app (the full product, end to end)
-
-Make sure your virtual environment is activated first: `source .venv/bin/activate`
+Install the requirements for the environment: `uv pip install -r backend/requirements.txt`
+Make sure your virtual environment is activated first: `source .venv/bin/activate` or `.venv\Scripts\activate`
 
 Start the FastAPI backend from the `backend/` folder:
 
