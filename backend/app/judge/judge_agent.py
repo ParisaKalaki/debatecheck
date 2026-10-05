@@ -214,6 +214,61 @@ def judge_debate(claim: str, transcript: list[DebateTurn], evidence: list[Eviden
     return JudgeVerdict.model_validate(json.loads(raw))
 
 
+# ---------- Tie-breaking for a split self-consistency vote. ----------
+#
+#   True (+2) -- Likely True (+1) -- Mixed/Unclear (0) -- Likely False (-1) -- False (-2)
+#
+# "Unverifiable" sits off this line entirely -- it doesn't mean "the truth is
+# in the middle", it means the evidence couldn't support ANY placement on it.
+VERDICT_POLARITY = {
+    "True": 2,
+    "Likely True": 1,
+    "Mixed / Unclear": 0,
+    "Likely False": -1,
+    "False": -2,
+}
+
+
+def _resolve_majority(labels: list[str]) -> tuple[str, int, bool]:
+    """Pick the winning verdict label out of n_runs self-consistency runs.
+
+    Returns (winning_label, winning_count, synthesized). `synthesized` is
+    True only for a genuine opposing-direction tie (see below) -- the one
+    case where the returned label did NOT literally come from any single
+    run, so the caller can't just look up a representative run by matching
+    verdict text and has to build one instead.
+    """
+    counts = Counter(labels)
+    max_count = max(counts.values())
+    tied = [label for label, c in counts.items() if c == max_count]
+
+    if len(tied) == 1:
+        return tied[0], max_count, False
+
+    # Multiple labels tied for first place. "Unverifiable" tied with
+    # anything wins outright: it means at least one full run concluded the
+    # evidence couldn't support ANY point on the true/false line at all,
+    # which is a stronger signal than a strength disagreement among the rest.
+    if "Unverifiable" in tied:
+        return "Unverifiable", max_count, False
+
+    polarities = [VERDICT_POLARITY[label] for label in tied]
+    all_same_side = all(p >= 0 for p in polarities) or all(p <= 0 for p in polarities)
+
+    if all_same_side:
+        # Every tied label leans the same direction (e.g. "Likely False" vs
+        # "False") -- the runs agree on WHICH WAY the evidence points, they
+        # only disagree on how strongly. Report the most moderate of the
+        # tied labels rather than an arbitrary pick.
+        moderate_label = min(tied, key=lambda label: abs(VERDICT_POLARITY[label]))
+        return moderate_label, max_count, False
+
+    # Tied labels span both sides of the line (e.g. "True" vs "False", or
+    # "Likely True" vs "Likely False") -- a genuine disagreement about
+    # DIRECTION, not just degree. "Mixed / Unclear" is the honest call here.
+    return "Mixed / Unclear", max_count, True
+
+
 # ---------- STANDARD WAY TO CALL THE JUDGE. Instead of trusting one LLM call's
 #            self-reported confidence, run the judge n_runs times on the SAME input and
 #            use the fraction of runs that agree on the verdict as confidence instead. ----------
@@ -229,7 +284,7 @@ def judge_debate_with_confidence(
         runs = list(pool.map(lambda _: judge_debate(claim, transcript, evidence), range(n_runs)))
 
     labels = [r.verdict for r in runs]
-    majority_label, majority_count = Counter(labels).most_common(1)[0]
+    majority_label, majority_count, synthesized = _resolve_majority(labels)
     agreement_rate = majority_count / n_runs
 
     if verbose:
@@ -248,12 +303,34 @@ def judge_debate_with_confidence(
             f"{label} x{len(confs)} (self-reported {', '.join(f'{c:.0%}' for c in confs)})"
             for label, confs in by_label.items()
         )
-        print(f"Self-consistency ({n_runs} runs): {groups} -> agreement confidence {agreement_rate:.0%}")
+        tie_note = " [tie resolved]" if synthesized else ""
+        print(
+            f"Self-consistency ({n_runs} runs): {groups} -> verdict '{majority_label}'"
+            f"{tie_note}, agreement confidence {agreement_rate:.0%}"
+        )
 
-    # Representative verdict: the first run that actually produced the majority
-    # label, so its reasoning / risk_reason / top_counter_evidence text stays
-    # internally consistent with that label
-    representative = next(r for r in runs if r.verdict == majority_label)
+    if synthesized:
+        # Genuine opposing-direction tie (e.g. 2x "True", 2x "False") -- no
+        # run produced "Mixed / Unclear" itself, so build a verdict that says
+        # so honestly instead of borrowing one run's reasoning for a label
+        # it never actually reached.
+        label_counts = Counter(labels)
+        tied_runs = [r for r in runs if label_counts[r.verdict] == majority_count]
+        tied_labels_str = " vs ".join(sorted({r.verdict for r in tied_runs}))
+        representative = tied_runs[0].model_copy(update={
+            "verdict": "Mixed / Unclear",
+            "reasoning": (
+                f"Self-consistency check split {majority_count}/{n_runs} runs between "
+                f"{tied_labels_str} with no majority direction, so this is reported as "
+                f"Mixed / Unclear rather than arbitrarily picking a side. One individual "
+                f"run's reasoning, for reference: {tied_runs[0].reasoning}"
+            ),
+        })
+    else:
+        # Representative verdict: the first run that actually produced the
+        # winning label, so its reasoning / risk_reason / top_counter_evidence
+        # text stays internally consistent with that label.
+        representative = next(r for r in runs if r.verdict == majority_label)
 
     # Swap the model's single self-reported confidence for the measured
     # agreement rate. final_answer is a @computed_field on JudgeVerdict, so it
