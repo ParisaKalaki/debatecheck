@@ -214,7 +214,7 @@ JudgeVerdict
 reasoning fills in first, then verdict/confidence/risk/counter-evidence stay consistent with it
 ```
 
-- Runs on **Groq** (`GROQ_API_KEY` in `.env`). The judge can run under either free or paid API quotas; large batch evaluations may require higher throughput limits.
+- Runs on **Groq**, free tier (`GROQ_API_KEY` in `.env`).
 - `top_counter_evidence` is deliberately the strongest point from the side **opposing** the verdict.
 - `confidence` measures how sure the judge is that its chosen **label** is correct — this works the same way for all 6 labels, including "Mixed / Unclear" (a confident "genuinely contested" vs. an unsure one). It's the **agreement rate across `n_runs` independent runs** (see "Self-consistency confidence" below), not a single self-reported number.
 - `final_answer` isn't a separate LLM call — it's a `@computed_field` on `JudgeVerdict` (see schemas.py) that's computed automatically from verdict + confidence. Because it's just a lookup, it can never drift out of sync with those two fields, and Groq is never asked to generate it. It shows up automatically whenever a JudgeVerdict is serialized (`.model_dump()` / `.model_dump_json()`), so any API response built from one gets it for free.
@@ -330,8 +330,8 @@ Using the same evaluation claims and retrieval pipeline allows the comparison to
 - Evaluation claims: **101**
 - Ground-truth labels: `true`, `false`, `mixture`, `unproven`
 - PubMed retrieval limit: **8 papers per query**
-- Baseline: pretrained NLI stance classification + majority vote
-- DebateCheck: PRO/CON multi-agent debate + LLM judge
+- Baseline: NLI stance classification + majority vote
+- DebateCheck: PRO/CON multi-agent debate + judge
 - Judge self-consistency: **`n_runs=4`**
 - Claims for which no usable PubMed evidence was retrieved were assigned `unproven` as the evaluation prediction rather than being removed from the test set.
 - Both systems completed all **101/101 claims with zero evaluation errors**.
@@ -463,7 +463,6 @@ evaluation/
 
 `analyze_api_cost.py` records and summarizes observed API usage and monetary cost from the final evaluation period.
 
-
 ## Git workflow
 
 ```bash
@@ -473,3 +472,4 @@ git checkout -b personX-your-part
 # ...work, commit...
 git push -u origin personX-your-part
 # then open a pull request into main
+```
