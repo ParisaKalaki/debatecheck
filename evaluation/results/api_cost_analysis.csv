@@ -1,0 +1,4 @@
+provider,model_or_service,plan,requests,cached_input_tokens,uncached_input_tokens,input_tokens_total,output_tokens,total_tokens,observed_cost_usd,notes
+Groq,openai/gpt-oss-120b,Developer,81.0,16100.0,175800.0,191900.0,92300.0,284200.0,0.08,Observed Groq dashboard usage for 6 Oct 2026. Includes project activity beyond the isolated 101-claim benchmark.
+Google,gemini-3.5-flash-lite,Free tier,,,,,,,0.0,Used under Gemini free tier during evaluation; rate-limit errors were observed.
+NCBI,PubMed E-utilities,Free,,,,,,,0.0,PubMed retrieval API has no observed monetary API cost.
