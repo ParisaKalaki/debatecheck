@@ -463,6 +463,7 @@ evaluation/
 
 `analyze_api_cost.py` records and summarizes observed API usage and monetary cost from the final evaluation period.
 
+
 ## Git workflow
 
 ```bash
@@ -473,3 +474,32 @@ git checkout -b personX-your-part
 git push -u origin personX-your-part
 # then open a pull request into main
 ```
+
+
+## Live Deployment
+
+DebateCheck is publicly deployed on Render.
+
+- **Live Web App:** https://debatecheck-frontend.onrender.com
+- **Backend API:** https://debatecheck-backend.onrender.com
+
+
+### Deployment Architecture
+
+```text
+User
+  -> Streamlit Frontend (Render)
+  -> FastAPI Backend (Render)
+  -> PubMed Evidence Retrieval
+  -> PRO / CON Multi-Agent Debate
+  -> LLM Judge
+  -> Verdict, Confidence, and Misinformation Risk
+```
+
+The frontend and backend are deployed as separate Render web services.
+API keys are securely stored as server-side environment variables and are
+not included in the repository.
+
+The deployment uses Render's free tier. Free instances may spin down after
+periods of inactivity, so the first request may take longer while the
+service starts up.
