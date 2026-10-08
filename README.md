@@ -475,7 +475,6 @@ git push -u origin personX-your-part
 # then open a pull request into main
 ```
 
-
 ## Live Deployment
 
 DebateCheck is publicly deployed on Render.
@@ -496,10 +495,20 @@ User
   -> Verdict, Confidence, and Misinformation Risk
 ```
 
-The frontend and backend are deployed as separate Render web services.
-API keys are securely stored as server-side environment variables and are
-not included in the repository.
+### Render Configuration
 
-The deployment uses Render's free tier. Free instances may spin down after
-periods of inactivity, so the first request may take longer while the
-service starts up.
+**Backend**
+
+```text
+Root Directory: backend
+Build Command: pip install -r requirements.txt
+Start Command: python -m uvicorn app.api.main:app --host 0.0.0.0 --port $PORT
+```
+
+**Frontend**
+
+```text
+Root Directory: frontend
+Build Command: pip install streamlit requests
+Start Command: streamlit run app.py --server.address 0.0.0.0 --server.port $PORT
+```
