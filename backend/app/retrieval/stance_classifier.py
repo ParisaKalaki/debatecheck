@@ -8,15 +8,13 @@ Uses the new google-genai SDK (the old google-generativeai package is deprecated
 import os
 import json
 from pathlib import Path
-from google import genai
+from app.core.llm_clients import get_gemini_client
 from dotenv import load_dotenv
 
 # Load .env from the project root, regardless of where this script is run from
 env_path = Path(__file__).resolve().parents[3] / ".env"
 load_dotenv(dotenv_path=env_path)
 
-
-client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 
 
 STANCE_PROMPT_TEMPLATE = """You are classifying evidence snippets from medical research abstracts against a health claim.
@@ -68,7 +66,7 @@ def classify_snippets_stance(claim: str, snippets: list[dict]) -> list[dict]:
     snippets_text = "\n".join(f"[{s['id']}] {s['text']}" for s in snippets)
     prompt = STANCE_PROMPT_TEMPLATE.format(claim=claim, snippets_text=snippets_text)
 
-    response = client.models.generate_content(
+    response = get_gemini_client().models.generate_content(
         model="gemini-3.5-flash-lite",
         contents=prompt
     )

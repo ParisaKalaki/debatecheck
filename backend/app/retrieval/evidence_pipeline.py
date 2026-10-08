@@ -14,6 +14,7 @@ Run the test from the backend/ folder:
 """
 
 import re
+from typing import Callable, Optional
 
 from app.core.schemas import ClaimAnalysis, EvidenceSnippet
 from app.retrieval.claim_analyzer import analyze_claim
@@ -91,22 +92,37 @@ def _search_with_fallbacks(analysis: ClaimAnalysis, retmax: int) -> tuple[str, l
     return queries[-1], []
 
 
-def get_evidence_with_analysis(claim: str, retmax: int = 8) -> tuple[ClaimAnalysis, list[EvidenceSnippet]]:
+ProgressFn = Callable[[str, float], None]
+
+
+def get_evidence_with_analysis(
+    claim: str, retmax: int = 8, on_progress: Optional[ProgressFn] = None,
+) -> tuple[ClaimAnalysis, list[EvidenceSnippet]]:
+    """on_progress(message, fraction) is called at each step (fractions 0.05-0.50 of the full run)."""
+    report = on_progress or (lambda message, fraction: None)
+
+    report("Understanding your claim...", 0.05)
     analysis = _build_analysis(claim)
 
+    report("Searching PubMed for relevant studies...", 0.15)
     query_used, ids = _search_with_fallbacks(analysis, retmax)
     analysis.search_query_used = query_used
     if not ids:
+        report("No studies found on PubMed for this claim.", 0.50)
         return analysis, []
 
+    report(f"Found {len(ids)} studies - reading the abstracts...", 0.22)
     papers = fetch_abstracts(ids)
     relevant_papers = [
         p for p in papers
         if is_relevant(p, analysis.intervention_terms, analysis.outcome_terms)
     ]
+    report(f"{len(relevant_papers)} of {len(papers)} studies look relevant to the claim.", 0.28)
 
     all_snippets = []
-    for paper in relevant_papers:
+    for i, paper in enumerate(relevant_papers, start=1):
+        report(f"Checking study {i} of {len(relevant_papers)} against the claim...",
+               0.28 + 0.22 * (i - 1) / max(len(relevant_papers), 1))
         snippets = chunk_abstract(paper)
         pubmed_types = paper.get("pubmed_types", [])
         snippets = [enrich_snippet(s, pubmed_types) for s in snippets]

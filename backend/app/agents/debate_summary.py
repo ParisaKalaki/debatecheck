@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Optional
 
 from dotenv import load_dotenv
-from google import genai
+from app.core.llm_clients import MissingAPIKeyError, get_gemini_client
 from google.genai import types
 from pydantic import BaseModel
 
@@ -25,7 +25,6 @@ from app.core.schemas import DebateConclusion, DebateTurn, JudgeVerdict
 env_path = Path(__file__).resolve().parents[3] / ".env"
 load_dotenv(dotenv_path=env_path)
 
-client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 MODEL = os.getenv("SUMMARY_MODEL", "gemini-3.5-flash-lite")
 
 # Removes citation IDs like "[E-123-4, E-123-5]" so they don't appear in plain-language text
@@ -90,8 +89,10 @@ def generate_conclusion(claim: str, transcript: list[DebateTurn], verdict: Judge
         gap=verdict.evidence_gap_note or "none",
     )
     try:
-        response = client.models.generate_content(model=MODEL, contents=prompt, config=config)
+        response = get_gemini_client().models.generate_content(model=MODEL, contents=prompt, config=config)
         out = _SummaryOutput.model_validate_json(response.text)
+    except MissingAPIKeyError:
+        raise
     except Exception as e:
         print(f"WARNING: debate conclusion failed ({type(e).__name__})")
         return None

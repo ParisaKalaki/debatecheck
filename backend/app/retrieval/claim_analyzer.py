@@ -16,7 +16,7 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
-from google import genai
+from app.core.llm_clients import MissingAPIKeyError, get_gemini_client
 from google.genai import types
 from pydantic import BaseModel
 
@@ -25,7 +25,6 @@ from app.core.schemas import ClaimAnalysis
 env_path = Path(__file__).resolve().parents[3] / ".env"
 load_dotenv(dotenv_path=env_path)
 
-client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 MODEL = os.getenv("ANALYZER_MODEL", "gemini-3.5-flash-lite")
 
 
@@ -71,10 +70,12 @@ def analyze_claim(claim: str) -> ClaimAnalysis | None:
         automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
     )
     try:
-        response = client.models.generate_content(
+        response = get_gemini_client().models.generate_content(
             model=MODEL, contents=ANALYZER_PROMPT.format(claim=claim), config=config
         )
         out = _AnalyzerOutput.model_validate_json(response.text)
+    except MissingAPIKeyError:
+        raise
     except Exception as e:  # network, quota, or invalid JSON -> caller falls back
         print(f"WARNING: claim analysis failed ({type(e).__name__}); using raw-claim fallback")
         return None

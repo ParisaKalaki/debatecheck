@@ -9,6 +9,7 @@ Then start this frontend (from the repository root):
 """
 
 import html
+import json
 import os
 import re
 import time as time_module
@@ -17,13 +18,39 @@ import requests
 import streamlit as st
 
 
-API_URL = os.getenv("DEBATECHECK_API_URL", "http://127.0.0.1:8002")
-VERIFY_URL = f"{API_URL.rstrip('/')}/verify"
+API_URL = os.getenv("DEBATECHECK_API_URL", "http://127.0.0.1:8002").rstrip("/")
+VERIFY_URL = f"{API_URL}/verify"
+STREAM_URL = f"{API_URL}/verify/stream"
+STATUS_URL = f"{API_URL}/config/status"
+KEYS_URL = f"{API_URL}/config/keys"
+
+# key name -> (label, help text, where to get it, hide input?)
+KEY_HELP = {
+    "NCBI_EMAIL": ("Your email address (for PubMed)",
+                   "Not a secret - PubMed just asks who is searching.", None, False),
+    "GOOGLE_API_KEY": ("Google Gemini API key",
+                       "Free. Sign in, click 'Create API key', and copy it.",
+                       "https://aistudio.google.com/apikey", True),
+    "GROQ_API_KEY": ("Groq API key",
+                     "Free. Sign in, click 'Create API Key', and copy it.",
+                     "https://console.groq.com/keys", True),
+    "NCBI_API_KEY": ("NCBI API key (optional)",
+                     "Optional - only raises PubMed's rate limit. Account settings > API Key Management.",
+                     "https://www.ncbi.nlm.nih.gov/account/settings/", True),
+}
+KEY_PAYLOAD_FIELD = {
+    "NCBI_EMAIL": "ncbi_email",
+    "GOOGLE_API_KEY": "google_api_key",
+    "GROQ_API_KEY": "groq_api_key",
+    "NCBI_API_KEY": "ncbi_api_key",
+}
 
 st.set_page_config(
     page_title="DebateCheck | Health Claim Intelligence",
     page_icon="⚖️",
     layout="wide",
+    # Collapsed after keys are successfully set up (see render_key_form)
+    initial_sidebar_state=st.session_state.get("sidebar_state", "auto"),
 )
 
 # CSS will be injected later via inject_chat_styles()
@@ -1135,6 +1162,131 @@ def render_result(data: dict, live: bool = True):
             render_evidence_card(item)
 
 
+# ---------- API key setup ----------
+
+def fetch_config_status() -> dict | None:
+    try:
+        response = requests.get(STATUS_URL, timeout=5)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException:
+        return None
+
+
+def render_key_form(status: dict, form_key: str, only_missing: bool):
+    """Form to enter API keys. Keys are validated and applied by the backend."""
+    keys = status.get("keys", {})
+    inputs = {}
+    with st.form(form_key):
+        for name, (label, help_text, url, secret) in KEY_HELP.items():
+            if only_missing and keys.get(name):
+                continue
+            state = "set" if keys.get(name) else "missing"
+            inputs[name] = st.text_input(
+                f"{label} - currently {state}",
+                type="password" if secret else "default",
+                key=f"{form_key}_{name}",
+                placeholder="Leave blank to keep the current value" if keys.get(name) else "",
+            )
+            st.caption(f"{help_text} [Get it here]({url})" if url else help_text)
+        save = st.checkbox(
+            "Remember these keys on this computer (saves them to the .env file)",
+            value=True, key=f"{form_key}_save",
+        )
+        submitted = st.form_submit_button("Save keys", type="primary")
+
+    if not submitted:
+        return
+
+    payload = {KEY_PAYLOAD_FIELD[n]: v.strip() for n, v in inputs.items() if v and v.strip()}
+    if not payload:
+        st.warning("Please enter at least one value.")
+        return
+    payload["save_to_env"] = save
+
+    with st.spinner("Checking your keys..."):
+        try:
+            response = requests.post(KEYS_URL, json=payload, timeout=60)
+        except requests.exceptions.RequestException:
+            st.error("Could not reach the backend to save the keys.")
+            return
+
+    if response.ok:
+        st.session_state["sidebar_state"] = "collapsed"   # keys verified -> tuck the sidebar away
+        st.success("Keys saved and working.")
+        time_module.sleep(0.8)
+        st.rerun()
+
+    try:
+        detail = response.json().get("detail")
+    except ValueError:
+        detail = response.text
+    if isinstance(detail, dict):
+        for name, message in detail.items():
+            st.error(f"**{KEY_HELP.get(name, (name,))[0]}:** {message}")
+    else:
+        st.error(str(detail))
+
+
+# ---------- Streaming verification with live progress ----------
+
+def run_verification_stream(claim_text: str) -> dict | None:
+    """Calls /verify/stream and shows each real pipeline step as it happens."""
+    progress_bar = st.progress(0.0, text="Starting...")
+    start = time_module.time()
+    message, fraction, result = "Starting...", 0.0, None
+
+    with st.status("Verifying your claim - this usually takes 1-3 minutes...", expanded=False) as status_box:
+        try:
+            with requests.post(
+                STREAM_URL, json={"claim": claim_text}, stream=True, timeout=(10, 120),
+            ) as response:
+                if not response.ok:
+                    status_box.update(label="Something went wrong", state="error")
+                    st.error(f"Backend returned {response.status_code}: {response.text[:300]}")
+                    return None
+
+                for line in response.iter_lines(decode_unicode=True):
+                    if not line:
+                        continue
+                    event = json.loads(line)
+                    elapsed = int(time_module.time() - start)
+
+                    if event["type"] == "progress":
+                        message, fraction = event["message"], event["progress"]
+                        if message != "Done!":
+                            st.write(f"\u2022 {message}")
+                    elif event["type"] == "result":
+                        result = event["data"]
+                    elif event["type"] == "error":
+                        status_box.update(label="Something went wrong", state="error")
+                        st.error(event["detail"])
+                        if "API key" in event["detail"]:
+                            st.info("Open **API keys** in the sidebar to add or fix your keys.")
+                        progress_bar.empty()
+                        return None
+
+                    progress_bar.progress(min(fraction, 1.0), text=f"{message}  \u00b7  {elapsed}s elapsed")
+
+        except requests.exceptions.ConnectionError:
+            status_box.update(label="Lost connection to the backend", state="error")
+            st.error("Could not connect to the backend. Is it still running?")
+            return None
+        except requests.exceptions.ReadTimeout:
+            status_box.update(label="The backend stopped responding", state="error")
+            st.error("The backend stopped responding. Check its terminal for errors.")
+            return None
+
+        if result is None:
+            status_box.update(label="No result received", state="error")
+            return None
+
+        status_box.update(label=f"Done in {int(time_module.time() - start)}s", state="complete", expanded=False)
+
+    progress_bar.empty()
+    return result
+
+
 # ---------- Page Layout & State Management ----------
 
 # Render Hero Brand Header
@@ -1154,6 +1306,34 @@ st.info(
     "Its output depends on retrieved literature and AI interpretation. For personal "
     "medical decisions, consult a qualified health professional."
 )
+
+config = fetch_config_status()
+if config is None:
+    st.error(
+        "**Can't reach the DebateCheck backend.** Start it in a second terminal "
+        "(with the virtual environment activated), then refresh this page:"
+    )
+    st.code("cd backend\nuvicorn app.api.main:app --reload --port 8002", language="bash")
+    st.stop()
+
+with st.sidebar:
+    st.markdown("### \u2699\ufe0f API keys")
+    if config.get("use_fixture"):
+        st.caption("Demo mode is on - no keys are needed.")
+    for key_name, (key_label, *_rest) in KEY_HELP.items():
+        st.write(("\u2705 " if config["keys"].get(key_name) else "\u274c ") + key_label)
+    if config.get("ready"):   # during first-time setup the form is on the main page instead
+        with st.expander("Add or update keys"):
+            render_key_form(config, "sidebar_keys_form", only_missing=False)
+
+if not config.get("ready"):
+    st.warning(
+        "### \U0001F511 One-time setup needed\n"
+        "DebateCheck needs a few **free** API keys to search PubMed and run its AI agents. "
+        "Enter the missing ones below - it takes about two minutes, and you only need to do it once."
+    )
+    render_key_form(config, "setup_keys_form", only_missing=True)
+    st.stop()
 
 with st.form("claim_form"):
     claim = st.text_area(
@@ -1178,24 +1358,11 @@ if submitted:
     if len(claim.strip()) < 5:
         st.warning("Please enter a specific health claim.")
     else:
-        with st.spinner("Analysing the claim, retrieving PubMed evidence and running the PRO vs CON debate..."):
-            try:
-                response = requests.post(
-                    VERIFY_URL,
-                    json={"claim": claim.strip()},
-                    timeout=600,
-                )
-            except requests.exceptions.ConnectionError:
-                st.error("Could not connect to the backend.")
-                st.stop()
-
-        if not response.ok:
-            st.error(f"Backend returned {response.status_code}")
-            st.stop()
-
-        # Persist response in session state
-        st.session_state["analysis_data"] = response.json()
-        st.session_state["run_live_animation"] = True
+        result_data = run_verification_stream(claim.strip())
+        if result_data:
+            # Persist response in session state
+            st.session_state["analysis_data"] = result_data
+            st.session_state["run_live_animation"] = True
 
 # Display results if available in session state (preserves view across filter clicks!)
 if st.session_state.get("analysis_data"):

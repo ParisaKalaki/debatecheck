@@ -16,6 +16,8 @@ def search_pubmed(query: str, retmax: int = 10, sort: str = "relevance") -> list
     Search PubMed for a query string, return a list of PubMed IDs (PMIDs).
     sort="relevance" returns PubMed's Best Match ordering instead of newest-first.
     """
+    Entrez.email = os.getenv("NCBI_EMAIL", "your_email@example.com")
+    Entrez.api_key = os.getenv("NCBI_API_KEY") or None
     handle = Entrez.esearch(db="pubmed", term=query, retmax=retmax, sort=sort)
     record = Entrez.read(handle)
     handle.close()

@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Optional
 
 from dotenv import load_dotenv
-from google import genai
+from app.core.llm_clients import MissingAPIKeyError, get_gemini_client
 from google.genai import types
 from pydantic import BaseModel
 
@@ -26,7 +26,6 @@ from app.core.schemas import BackgroundExplainer
 env_path = Path(__file__).resolve().parents[3] / ".env"
 load_dotenv(dotenv_path=env_path)
 
-client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 MODEL = os.getenv("EXPLAINER_MODEL", "gemini-3.5-flash-lite")
 
 
@@ -74,8 +73,10 @@ def generate_background(claim: str, checkable_claim: str, verdict_label: Optiona
         verdict=verdict_label or "none - no debate was possible for this claim",
     )
     try:
-        response = client.models.generate_content(model=MODEL, contents=prompt, config=config)
+        response = get_gemini_client().models.generate_content(model=MODEL, contents=prompt, config=config)
         out = _ExplainerOutput.model_validate_json(response.text)
+    except MissingAPIKeyError:
+        raise
     except Exception as e:
         print(f"WARNING: background explainer failed ({type(e).__name__})")
         return None

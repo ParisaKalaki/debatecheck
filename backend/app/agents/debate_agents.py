@@ -11,7 +11,7 @@ import re
 from pathlib import Path
 
 from dotenv import load_dotenv
-from google import genai
+from app.core.llm_clients import get_gemini_client
 from google.genai import types
 from pydantic import BaseModel, ValidationError
 
@@ -21,7 +21,6 @@ from app.core.schemas import DebateTurn, EvidenceSnippet
 env_path = Path(__file__).resolve().parents[3] / ".env"
 load_dotenv(dotenv_path=env_path)
 
-client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 MODEL = os.getenv("DEBATE_MODEL", "gemini-3.5-flash-lite")
 
 # Matches inline ID brackets like "[E-42143317-5]" or "[E-42143317-5, E-42143317-6]"
@@ -156,7 +155,7 @@ def _call_llm(prompt: str, retries: int = 2) -> AgentOutput:
     )
     last_err = None
     for _ in range(retries):
-        response = client.models.generate_content(model=MODEL, contents=prompt, config=config)
+        response = get_gemini_client().models.generate_content(model=MODEL, contents=prompt, config=config)
         try:
             return AgentOutput.model_validate_json(response.text)
         except ValidationError as e:
