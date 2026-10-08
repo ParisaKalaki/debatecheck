@@ -576,6 +576,13 @@ html, body, [class*="css"] {
     margin-bottom: 8px;
 }
 
+.bg-fineprint {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #ef4444;
+    margin: -1.1rem 0 1.5rem 6px;
+}
+
 .bg-disclaimer {
     font-size: 0.8rem;
     opacity: 0.75;
@@ -915,40 +922,71 @@ def render_claim_check_note(analysis: dict | None):
         st.caption(f"PubMed search used: {query}")
 
 
-def render_background_card(background: dict | None):
-    """Plain-language quick answer from general medical knowledge.
-    Visually and textually separate from the evidence-based verdict."""
+def render_background_card(background: dict | None, debate_available: bool):
+    """One-line quick answer from general medical knowledge, pointing users to the
+    evidence-based debate conclusion for a more informed answer."""
     if not background:
         return
 
-    points_html = "".join(
-        f"<li>{html.escape(p)}</li>" for p in background.get("explanation_points") or []
+    # Guidance inside the card (only when a debate exists)
+    pointer_html = (
+        '<div class="bg-takeaway">\U0001F4A1 <strong>For a more informed answer, read the '
+        'Debate Conclusion below.</strong> It is based on real PubMed studies you can check, '
+        'not just general AI knowledge.</div>'
+        if debate_available else ""
     )
-    misconception = background.get("misconception")
-    misconception_html = (
-        f'<div class="bg-note"><strong>Common misconception:</strong> {html.escape(misconception)}</div>'
-        if misconception else ""
-    )
-    verdict_note = background.get("verdict_note")
-    differs_html = (
-        f'<div class="bg-note"><strong>Note:</strong> this background answer differs from the '
-        f'evidence-based verdict below. {html.escape(verdict_note or "")}</div>'
-        if background.get("differs_from_evidence_verdict") else ""
-    )
+
+    # Fine print shown OUTSIDE the card, in muted text (not part of the answer)
+    fineprint = "AI-generated from general medical knowledge, not from the retrieved studies."
+    if not debate_available:
+        fineprint = (
+            "No research-based debate was possible for this claim, so treat this as general "
+            "information only. " + fineprint
+        )
+
+    differs_html = ""
+    if debate_available and background.get("differs_from_evidence_verdict"):
+        note = html.escape(background.get("verdict_note") or "")
+        differs_html = (
+            f'<div class="bg-note">\u26A0\uFE0F <strong>This quick answer differs from the debate '
+            f'result.</strong> {note} The debate conclusion is based on real, traceable studies, '
+            f'so check it and its sources before deciding.</div>'
+        )
 
     card_html = (
         f'<div class="bg-card">'
         f'<div class="bg-label">{SVG_ICONS["brain"]} Quick Answer \u2022 General Medical Knowledge</div>'
         f'<div class="bg-headline">{html.escape(background.get("headline", ""))}</div>'
-        f'<div class="bg-takeaway">{html.escape(background.get("takeaway", ""))}</div>'
-        f'<ul class="bg-points">{points_html}</ul>'
-        f'{misconception_html}'
+        f'{pointer_html}'
         f'{differs_html}'
-        f'<div class="bg-disclaimer">AI-generated background from general medical knowledge, not from '
-        f'the retrieved studies. The evidence-based verdict appears after the debate below.</div>'
         f'</div>'
+        f'<div class="bg-fineprint">\u26A0\uFE0F ! {fineprint}</div>'
     )
     st.markdown(card_html, unsafe_allow_html=True)
+
+
+def render_no_debate_notice(evidence: list[dict]):
+    """Plain-language notice when there was nothing to debate."""
+    if evidence:
+        st.warning(
+            "**Not enough research to debate this claim.** We found some PubMed studies, but none "
+            "of them directly support or contradict this claim, so our AI agents had nothing "
+            "reliable to debate.\n\n"
+            "This doesn't mean the claim is true or false, only that we couldn't check it against "
+            "research. Try rephrasing it more specifically: say what is taken or done, and what "
+            "health effect it has."
+        )
+        with st.expander(f"Studies we found ({len(evidence)} snippets) - none directly address the claim", expanded=False):
+            for item in evidence:
+                render_evidence_card(item)
+    else:
+        st.warning(
+            "**No research found for this claim.** We searched PubMed but couldn't find any studies "
+            "on it, so there was nothing for our AI agents to debate.\n\n"
+            "This doesn't mean the claim is true or false, only that we couldn't check it against "
+            "research. Try rephrasing it more specifically: say what is taken or done, and what "
+            "health effect it has."
+        )
 
 
 def render_conclusion_card(conclusion: dict | None):
@@ -990,16 +1028,12 @@ def render_result(data: dict, live: bool = True):
     # ==========================================
     # 0. QUICK ANSWER (BACKGROUND KNOWLEDGE) + HOW THE CLAIM WAS CHECKED
     # ==========================================
-    render_background_card(data.get("background"))
+    debate_available = bool(transcript)
+    render_background_card(data.get("background"), debate_available)
     render_claim_check_note(data.get("analysis"))
 
-    if not evidence:
-        st.warning(
-            "**Unverifiable with the available PubMed evidence.** No relevant studies were "
-            "retrieved for this claim, so no evidence-based debate or verdict could be produced. "
-            "The quick answer above is general background knowledge only. Try rephrasing the "
-            "claim more specifically."
-        )
+    if not debate_available:
+        render_no_debate_notice(evidence)
         return
 
     # ==========================================

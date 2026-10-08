@@ -78,14 +78,25 @@ class VerificationResponse(BaseModel):
     conclusion: Optional[DebateConclusion] = None     # plain-language summary of the debate result
 
 
-def no_evidence_verdict() -> JudgeVerdict:
-    """Rule-based verdict used when retrieval finds no relevant PubMed evidence.
-    Not produced by the judge LLM; the UI hides confidence and risk for this case."""
+def has_debatable_evidence(evidence: list[EvidenceSnippet]) -> bool:
+    """A debate needs at least one snippet that actually supports or contradicts the claim.
+    Neutral-only evidence (background, different outcome, etc.) is not enough to argue from."""
+    return any(e.stance in ("support", "contradict") for e in evidence)
+
+
+def no_evidence_verdict(papers_found: bool) -> JudgeVerdict:
+    """Rule-based verdict used when there is no evidence to debate.
+    Not produced by the judge LLM; the UI hides confidence and risk for this case.
+    These rows can be identified by an empty transcript."""
+    reason = (
+        "PubMed studies were found, but none directly supported or contradicted this claim, "
+        "so no evidence-based debate or judgement was possible."
+        if papers_found else
+        "No relevant PubMed studies were retrieved for this claim, so no evidence-based "
+        "debate or judgement was possible."
+    )
     return JudgeVerdict(
-        reasoning=(
-            "No relevant PubMed studies were retrieved for this claim, so no evidence-based "
-            "debate or judgement was possible."
-        ),
+        reasoning=reason,
         verdict="Unverifiable",
         confidence=1.0,
         misinformation_risk="Medium",
@@ -131,11 +142,11 @@ def verify_claim(request: ClaimRequest):
 
             checked_claim = analysis.checkable_claim
 
-            if not evidence:
-                # No relevant evidence: skip debate + judge (nothing to argue from) and
-                # return a rule-based "Unverifiable" verdict instead of an error.
+            if not has_debatable_evidence(evidence):
+                # Nothing supports or contradicts the claim: skip debate + judge and return a
+                # rule-based "Unverifiable" verdict. Retrieved papers are still returned for display.
                 transcript, citation_log = [], []
-                verdict = no_evidence_verdict()
+                verdict = no_evidence_verdict(papers_found=bool(evidence))
                 conclusion = None
             else:
                 # Debate and judge work on the checkable version of the claim
@@ -150,8 +161,10 @@ def verify_claim(request: ClaimRequest):
                 # Plain-language conclusion of the debate (from transcript + verdict only)
                 conclusion = generate_conclusion(checked_claim, transcript, verdict)
 
-            # Separate, labelled background answer (never alters the verdict)
-            background = generate_background(claim, checked_claim, verdict.verdict)
+            # Separate, labelled one-line quick answer (never alters the verdict)
+            background = generate_background(
+                claim, checked_claim, verdict.verdict if transcript else None
+            )
 
         return VerificationResponse(
             claim=claim,

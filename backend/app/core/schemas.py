@@ -66,12 +66,9 @@ class ClaimAnalysis(BaseModel):
 
 
 class BackgroundExplainer(BaseModel):
-    """Plain-language background answer from general medical knowledge.
+    """One-line quick answer from general medical knowledge.
     Shown separately from (and never merged into) the evidence-based JudgeVerdict."""
-    headline: str
-    takeaway: str
-    explanation_points: list[str]
-    misconception: Optional[str] = None
+    headline: str                               # one plain-language sentence
     differs_from_evidence_verdict: bool = False
     verdict_note: Optional[str] = None
 

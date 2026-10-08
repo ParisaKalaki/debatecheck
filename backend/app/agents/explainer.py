@@ -32,46 +32,37 @@ MODEL = os.getenv("EXPLAINER_MODEL", "gemini-3.5-flash-lite")
 
 class _ExplainerOutput(BaseModel):
     headline: str
-    takeaway: str
-    explanation_points: list[str]
-    misconception: Optional[str] = None
     differs_from_evidence_verdict: bool
     verdict_note: Optional[str] = None
 
 
-EXPLAINER_PROMPT = """You write a short, plain-language background explanation of a health claim
-for a non-expert reader. It is shown SEPARATELY from an evidence-based verdict and is clearly
-labelled as general medical knowledge, not as findings from the retrieved studies.
+EXPLAINER_PROMPT = """You write a ONE-SENTENCE quick answer to a health claim for a non-expert
+reader, based on well-established general medical knowledge. It is shown SEPARATELY from an
+evidence-based debate verdict and is clearly labelled as general knowledge.
 
 USER CLAIM: "{claim}"
 CLAIM AS CHECKED: "{checkable_claim}"
 EVIDENCE-BASED VERDICT (from a separate debate over retrieved PubMed studies): {verdict}
 
 Write:
-1. headline: one sentence that directly answers whether the claim is accurate, based on
-   well-established medical knowledge.
-2. takeaway: one or two sentences with the key practical point.
-3. explanation_points: 3-5 short bullet points explaining the facts or mechanism behind the
-   answer, in plain language. Briefly define any technical term you use.
-4. misconception: if the claim rests on a misunderstanding (e.g. wrong mechanism or wording),
-   state it in one sentence; otherwise null.
-5. differs_from_evidence_verdict: true if well-established knowledge points in a meaningfully
-   different direction from the evidence-based verdict above; otherwise false.
-6. verdict_note: if differs_from_evidence_verdict is true, one sentence on the likely reason
-   (e.g. the retrieved studies did not address the claim directly); otherwise null.
+1. headline: ONE plain-language sentence (max 25 words) that directly answers whether the claim
+   is accurate. If the claim rests on a misunderstanding, the sentence should gently correct it.
+   No jargon.
+2. differs_from_evidence_verdict: true only if a verdict is given above AND well-established
+   knowledge points in a meaningfully different direction from it; otherwise false.
+3. verdict_note: if differs_from_evidence_verdict is true, one short sentence on the likely
+   reason (e.g. the retrieved studies did not cover the claim fully); otherwise null.
 
 Rules:
-- Only state facts that are well established in mainstream medicine. If something is
-  uncertain or debated, say so instead of guessing.
-- Do not cite specific studies or sources - you have none here.
-- Do not adjust your explanation to agree with the verdict; report disagreement in verdict_note.
+- Only state what is well established in mainstream medicine; if it is genuinely uncertain, say so.
+- Do not cite studies or sources. Do not adjust your answer to agree with the verdict.
 - Do not give personal medical advice or dosing instructions.
-- Keep the whole answer under 150 words.
 
 Return JSON only."""
 
 
-def generate_background(claim: str, checkable_claim: str, verdict_label: str) -> BackgroundExplainer | None:
+def generate_background(claim: str, checkable_claim: str, verdict_label: Optional[str]) -> BackgroundExplainer | None:
+    """verdict_label=None means no debate was possible (no usable evidence)."""
     config = types.GenerateContentConfig(
         response_mime_type="application/json",
         response_schema=_ExplainerOutput,
@@ -79,7 +70,8 @@ def generate_background(claim: str, checkable_claim: str, verdict_label: str) ->
         automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
     )
     prompt = EXPLAINER_PROMPT.format(
-        claim=claim, checkable_claim=checkable_claim, verdict=verdict_label
+        claim=claim, checkable_claim=checkable_claim,
+        verdict=verdict_label or "none - no debate was possible for this claim",
     )
     try:
         response = client.models.generate_content(model=MODEL, contents=prompt, config=config)
