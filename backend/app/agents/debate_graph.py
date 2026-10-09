@@ -11,7 +11,7 @@ Test (from the backend/ folder):
 import json
 import operator
 from pathlib import Path
-from typing import Annotated, TypedDict
+from typing import Annotated, Callable, Optional, TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
@@ -25,6 +25,13 @@ class DebateState(TypedDict):
     con_evidence: list[EvidenceSnippet]
     transcript: Annotated[list[DebateTurn], operator.add]
     citation_log: Annotated[list[dict], operator.add]
+    on_progress: Optional[Callable[[str, float], None]]
+
+
+def _notify(state: DebateState, message: str, fraction: float) -> None:
+    callback = state.get("on_progress")
+    if callback:
+        callback(message, fraction)
 
 
 def _find_turn(state: DebateState, agent: str, rnd: int) -> DebateTurn:
@@ -36,22 +43,26 @@ def _evidence_by_id(state: DebateState) -> dict[str, EvidenceSnippet]:
 
 
 def pro_opening(state: DebateState):
+    _notify(state, "PRO agent is preparing its opening argument...", 0.55)
     turn, log = opening("PRO", state["claim"], state["pro_evidence"])
     return {"transcript": [turn], "citation_log": [log]}
 
 
 def con_opening(state: DebateState):
+    _notify(state, "CON agent is preparing its opening argument...", 0.61)
     turn, log = opening("CON", state["claim"], state["con_evidence"])
     return {"transcript": [turn], "citation_log": [log]}
 
 
 def pro_rebuttal(state: DebateState):
+    _notify(state, "PRO agent is rebutting CON's points...", 0.67)
     turn, log = rebuttal("PRO", state["claim"], state["pro_evidence"],
                          _find_turn(state, "CON", 1), _evidence_by_id(state))
     return {"transcript": [turn], "citation_log": [log]}
 
 
 def con_rebuttal(state: DebateState):
+    _notify(state, "CON agent is rebutting PRO's points...", 0.73)
     turn, log = rebuttal("CON", state["claim"], state["con_evidence"],
                          _find_turn(state, "PRO", 1), _evidence_by_id(state))
     return {"transcript": [turn], "citation_log": [log]}
@@ -74,8 +85,10 @@ def build_graph():
 _graph = build_graph()
 
 
-def run_debate(claim: str, evidence: list[EvidenceSnippet]) -> dict:
-    """Returns {"claim", "transcript": list[DebateTurn], "citation_log": list[dict]}."""
+def run_debate(claim: str, evidence: list[EvidenceSnippet],
+               on_progress: Optional[Callable[[str, float], None]] = None) -> dict:
+    """Returns {"claim", "transcript": list[DebateTurn], "citation_log": list[dict]}.
+    on_progress(message, fraction) is optional and called before each turn."""
     pro, con = split_evidence(evidence)
     result = _graph.invoke({
         "claim": claim,
@@ -83,6 +96,7 @@ def run_debate(claim: str, evidence: list[EvidenceSnippet]) -> dict:
         "con_evidence": con,
         "transcript": [],
         "citation_log": [],
+        "on_progress": on_progress,
     })
     return {
         "claim": claim,
