@@ -636,6 +636,31 @@ DC_CSS = """<style>
     --dc-con-soft: #fbe3e7;
 }
 
+/* ---------- Premium outer frame around the whole page content ---------- */
+[data-testid="stMainBlockContainer"] {
+    position: relative;
+    width: calc(100% - 3rem);
+    max-width: 1240px;
+    margin: 4.5rem auto 2.5rem auto;   /* clears Streamlit's top toolbar so the top edge is visible */
+    padding: 2.4rem 2.6rem 2.6rem 2.6rem !important;
+    border-radius: 28px;
+    /* thin gold line + soft navy halo + depth shadow; works on light and dark backgrounds */
+    box-shadow:
+        inset 0 6px 0 #c99a2e,                    /* gold accent along the top edge (follows the curve) */
+        0 0 0 1.5px rgba(201, 154, 46, 0.55),     /* thin gold outline */
+        0 0 0 7px rgba(43, 37, 128, 0.07),        /* soft navy halo */
+        0 24px 60px rgba(31, 27, 94, 0.16);       /* depth */
+    overflow: visible !important;
+}
+@media (max-width: 640px) {
+    [data-testid="stMainBlockContainer"] {
+        width: calc(100% - 1rem);
+        margin: 4rem auto 1.2rem auto;
+        padding: 1.6rem 1rem 1.6rem 1rem !important;
+        border-radius: 20px;
+    }
+}
+
 /* ---------- Header bar ---------- */
 .dc-header {
     display: flex; align-items: center; gap: 14px;
@@ -653,11 +678,16 @@ DC_CSS = """<style>
     border: none; border-radius: 18px; padding: 18px 22px;
 }
 .st-key-claim_box [data-testid="stForm"] label p { color: #e4e2fb !important; font-weight: 600; }
-.st-key-claim_box textarea {
-    border-radius: 14px !important; background: rgba(255,255,255,0.10) !important;
-    color: #ffffff !important; border: 1px solid rgba(255,255,255,0.25) !important;
+.st-key-claim_box [data-baseweb="textarea"],
+.st-key-claim_box [data-baseweb="base-input"] {
+    background: #ffffff !important; border-radius: 14px !important; border: none !important;
 }
-.st-key-claim_box textarea::placeholder { color: #b9b6e3 !important; }
+.st-key-claim_box textarea {
+    border-radius: 14px !important; background: #ffffff !important;
+    color: #1e1b3a !important; -webkit-text-fill-color: #1e1b3a !important;
+    caret-color: #1e1b3a !important;
+}
+.st-key-claim_box textarea::placeholder { color: #8a87a3 !important; -webkit-text-fill-color: #8a87a3 !important; }
 .st-key-claim_box [data-testid="stFormSubmitButton"] button {
     background: linear-gradient(90deg, #d8ab3c, #c4922a) !important; color: var(--dc-navy) !important;
     border: none !important; border-radius: 999px !important; font-weight: 800 !important;
@@ -1110,7 +1140,7 @@ def render_background_card(background: dict | None, debate_available: bool):
     )
 
     # Fine print shown OUTSIDE the card, in muted text (not part of the answer)
-    fineprint = "AI-generated from general medical knowledge, not from the retrieved studies."
+    fineprint = "AI-generated from general knowledge, not from the retrieved studies."
     if not debate_available:
         fineprint = (
             "No research-based debate was possible for this claim, so treat this as general "
@@ -1128,7 +1158,7 @@ def render_background_card(background: dict | None, debate_available: bool):
 
     card_html = (
         f'<div class="bg-card">'
-        f'<div class="bg-label">{SVG_ICONS["brain"]} Quick Answer \u2022 General Medical Knowledge</div>'
+        f'<div class="bg-label">{SVG_ICONS["brain"]} Quick Answer \u2022 General Knowledge</div>'
         f'<div class="bg-headline">{html.escape(background.get("headline", ""))}</div>'
         f'{pointer_html}'
         f'{differs_html}'
@@ -1403,7 +1433,7 @@ def sources_card_html(source_index: dict, evidence_count: int) -> str:
         f'<div class="dc-card">'
         f'<div class="dc-agent-head"><span class="dc-src-title" style="font-size:1rem;">Traceable sources</span></div>'
         f'{rows or NO_SOURCES_HTML}'
-        f'<div class="dc-note">Dots show source credibility (study design). {evidence_count} snippets retrieved '
+        f'<div class="dc-note">Papers cited in the debate. Dots show source credibility (study design). {evidence_count} snippets retrieved '
         f'in total \u2014 see \u201cRetrieved PubMed Literature\u201d below.</div>'
         f'</div>'
     )
@@ -1422,25 +1452,28 @@ def debate_grid_html(turns: list[dict], evidence_by_id: dict, evidence_count: in
     )
 
 
-def render_counter_evidence(verdict: dict, evidence_by_id: dict):
+def counter_evidence_html(verdict: dict, evidence_by_id: dict) -> str:
     text = verdict.get("top_counter_evidence")
     if not text:
-        return
+        return ""
     body = clean_argument_html(text, evidence_by_id)   # turns citation IDs into Source links
-    st.markdown(
-        f'<div class="dc-counter"><span class="dc-counter-label">Strongest evidence against this verdict</span>'
+    return (
+        f'<div class="dc-counter" style="margin:0;"><span class="dc-counter-label">Strongest evidence against this verdict</span>'
         f'<div style="font-size:0.8rem;color:#6b6782;margin-bottom:6px;">The opposing side\u2019s best point, '
         f'shown so you can judge whether the verdict could be wrong.</div>'
-        f'<div style="font-size:1rem;line-height:1.55;">{body}</div></div>',
-        unsafe_allow_html=True,
+        f'<div style="font-size:1rem;line-height:1.55;">{body}</div></div>'
     )
 
 
-# ---------- Main Result Rendering Function ----------
+def chat_debate_html(turns: list[dict], evidence_by_id: dict) -> str:
+    bubbles = "".join(render_turn_bubble_html(t, evidence_by_id) for t in turns)
+    return f'<div class="chat-conversation-container">{bubbles}</div>'
+
 
 def render_result(data: dict, live: bool = True):
-    """Mockup-style dashboard: quick answer -> verdict/risk/quality cards -> conclusion ->
-    PRO | CON | sources debate grid -> strongest counter-evidence -> detailed dossier."""
+    """Debate conversation -> verdict/risk/quality cards -> conclusion ->
+    sources + strongest counter-evidence -> detailed dossier.
+    The quick answer is shown only when there was nothing to debate."""
     inject_chat_styles()
 
     verdict = data.get("verdict", {})
@@ -1449,40 +1482,39 @@ def render_result(data: dict, live: bool = True):
     evidence_by_id = {item.get("id"): item for item in evidence if item.get("id")}
     ordered_transcript = sort_transcript_turns(transcript)
 
-    # 0. Quick answer + how the claim was checked
-    debate_available = bool(transcript)
-    render_background_card(data.get("background"), debate_available)
-    render_claim_check_note(data.get("analysis"))
-
-    if not debate_available:
+    # No debate possible -> quick answer + plain-language notice only
+    if not transcript:
+        render_background_card(data.get("background"), debate_available=False)
         render_no_debate_notice(evidence)
         return
 
-    # 1. Summary cards
-    n_sources = len(build_source_index(ordered_transcript, evidence_by_id))
-    render_verdict_row(verdict, data.get("conclusion"), evidence, n_sources)
-
-    # 2. Plain-language conclusion
-    render_conclusion_card(data.get("conclusion"))
-
-    # 3. Debate grid (revealed turn by turn on a new result)
+    # 1. Debate as a chat conversation (revealed turn by turn on a new result)
     st.markdown(
-        '<div class="dc-section-title"><h3>The debate</h3>'
-        '<span>2 rounds \u00b7 every point cites PubMed evidence</span></div>',
+        f'<div class="arena-header"><div class="arena-title">{SVG_ICONS["chat_bubble"]} Live Evidence Debate</div>'
+        f'<div class="arena-badge">2 Rounds \u2022 AI Agents Grounded in PubMed</div></div>',
         unsafe_allow_html=True,
     )
-    grid = st.empty()
+    chat = st.empty()
     if live:
         for i in range(1, len(ordered_transcript) + 1):
-            grid.markdown(debate_grid_html(ordered_transcript[:i], evidence_by_id, len(evidence)),
-                          unsafe_allow_html=True)
+            chat.markdown(chat_debate_html(ordered_transcript[:i], evidence_by_id), unsafe_allow_html=True)
             time_module.sleep(0.85)
     else:
-        grid.markdown(debate_grid_html(ordered_transcript, evidence_by_id, len(evidence)),
-                      unsafe_allow_html=True)
+        chat.markdown(chat_debate_html(ordered_transcript, evidence_by_id), unsafe_allow_html=True)
 
-    # 4. Strongest counter-evidence
-    render_counter_evidence(verdict, evidence_by_id)
+    # 2. Traceable sources + strongest counter-evidence (right after the debate)
+    source_index = build_source_index(ordered_transcript, evidence_by_id)
+    st.markdown(
+        f'<div class="dc-grid">{sources_card_html(source_index, len(evidence))}'
+        f'{counter_evidence_html(verdict, evidence_by_id)}</div>',
+        unsafe_allow_html=True,
+    )
+
+    # 3. Summary cards
+    render_verdict_row(verdict, data.get("conclusion"), evidence, len(source_index))
+
+    # 4. Plain-language conclusion
+    render_conclusion_card(data.get("conclusion"))
 
     # 5. Detailed dossier (collapsed)
     confidence = confidence_percent(verdict.get("confidence"))

@@ -175,8 +175,11 @@ def run_pipeline(claim: str, retmax: int, report: ProgressFn) -> VerificationRes
         report("Writing the plain-language conclusion...", 0.90)
         conclusion = generate_conclusion(checked_claim, transcript, verdict)
 
-    report("Preparing the quick answer...", 0.95)
-    background = generate_background(claim, checked_claim, verdict.verdict if transcript else None)
+    # Quick answer is only shown when there was nothing to debate
+    background = None
+    if not transcript:
+        report("Preparing a quick general-knowledge answer...", 0.95)
+        background = generate_background(claim, checked_claim, None)
 
     return VerificationResponse(
         claim=claim,

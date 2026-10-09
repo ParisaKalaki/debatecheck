@@ -1,6 +1,6 @@
 # DebateCheck
 
-Multi-agent LLM system for evidence-grounded health claim verification. Two AI agents (PRO and CON) debate a submitted health claim using quality-weighted evidence retrieved from PubMed. A judge agent evaluates the debate and produces a verdict, an agreement-based confidence score, a misinformation risk level, and the strongest counter-evidence. The app also gives a one-line quick answer and a plain-language conclusion of the debate.
+Multi-agent LLM system for evidence-grounded health claim verification. Two AI agents (PRO and CON) debate a submitted health claim using quality-weighted evidence retrieved from PubMed. A judge agent evaluates the debate and produces a verdict, an agreement-based confidence score, a misinformation risk level, and the strongest counter-evidence. The app also gives a plain-language conclusion of the debate, and a one-line quick answer when no evidence could be debated.
 
 A traditional NLP baseline (keyword retrieval + stance classifier) is built alongside for comparison.
 
@@ -153,17 +153,19 @@ Every claim then returns the saved vitamin D example instantly, and the key setu
 
 | Section | What it shows |
 |---------|---------------|
-| **Quick Answer • General Medical Knowledge** | A **one-line** answer from the AI's general medical knowledge, with a pointer to read the Debate Conclusion for a more informed, evidence-based answer. Below it, a red ⚠️ note says it is AI-generated and not from the retrieved studies. If it disagrees with the debate result, a warning says so. |
-| **Checked against the evidence as / PubMed search used** | How the claim was rephrased into a testable statement, and the exact PubMed query used. |
+| **Live Evidence Debate** | PRO and CON argue as a chat conversation over two rounds (opening, rebuttal), revealed turn by turn. Every point links to its PubMed source (**Source ↗**). |
+| **Traceable sources** | Each paper cited in the debate (S1, S2, …) with its study type, year and credibility dots, linking to PubMed. |
+| **Strongest evidence against this verdict** (gold box) | The opposing side's best point, so you can judge whether the verdict could be wrong. |
 | **Judge's verdict** card | The verdict, a ring showing **agreement** (how many of 4 independent judge runs chose this verdict — not a probability that the claim is true), a plain-language answer, and how many sources were cited. |
 | **Misinformation risk** card | Low / Medium / High on a scale, with the reason. |
 | **Evidence by study quality** card | How many retrieved snippets came from each study type (strongest first), plus how many support vs contradict the claim. These are counts; the judge weighs quality, not counts. |
 | **Debate Conclusion • In Plain Language** | A short summary of the debate and its result, built only from the debate and the verdict. |
-| **The debate** | **PRO** and **CON** cards with numbered points for each round (opening, rebuttal). Every point has clickable source tags like `S3 · Randomised trial · n=31521 ↗`. The **Traceable sources** card lists each cited paper (S1, S2, …) with its study type, year and credibility dots. The debate is revealed turn by turn when a new result arrives. |
-| **Strongest evidence against this verdict** (gold box) | The opposing side's best point, so you can judge whether the verdict could be wrong. |
 | **Detailed Clinical Dossier** (collapsed) | The judge's reasoning and evidence limitations, and every retrieved PubMed snippet (filterable by support / contradict / neutral) with study design, sample size, year and credibility. |
 
-**When there is nothing to debate.** If PubMed finds no studies, or none that directly **support or contradict** the claim, the debate is skipped. The app shows a plain-language notice (*"Not enough research to debate this claim"* or *"No research found for this claim"*) with tips for rephrasing, plus any loosely related studies it found.
+**When there is nothing to debate.** If PubMed finds no studies, or none that directly **support or contradict** the claim, the debate is skipped. The app then shows:
+
+- a **Quick Answer • General Knowledge** card: a one-line answer from the AI's general knowledge, with a red ⚠️ note that it is AI-generated and not based on research;
+- a plain-language notice (*"Not enough research to debate this claim"* or *"No research found for this claim"*) with tips for rephrasing, plus any loosely related studies it found.
 
 ### Tips for good results
 
@@ -245,15 +247,13 @@ Claim analyzer (Gemini)        → checkable claim + PubMed query + keywords
 Evidence pipeline              → PubMed search → relevance filter → snippets → quality metadata → stance
    ↓
 Any snippet that supports or contradicts the claim?
-   ├─ No  → rule-based "Unverifiable" (debate and judge skipped)
+   ├─ No  → rule-based "Unverifiable" + one-line quick answer (Gemini); debate and judge skipped
    └─ Yes ↓
 PRO vs CON debate (LangGraph)  → 2 rounds, every point must cite a snippet ID
    ↓
 Judge (Groq, 4 runs)           → verdict + agreement confidence + misinformation risk
    ↓
 Debate conclusion (Gemini)     → plain-language summary of the debate result
-   ↓
-Quick answer (Gemini)          → one-line general-knowledge answer, shown separately
    ↓
 FastAPI /verify/stream (live progress) → Streamlit UI
 ```
@@ -368,7 +368,7 @@ DebateTurn objects (shared schema) → passed to the judge
 
 ### Quick answer (`backend/app/agents/explainer.py`)
 
-A **one-sentence** answer from **general medical knowledge**. It is kept separate from the evidence-based verdict: it is labelled as general knowledge in the UI, never changes the verdict, points users to the evidence-based Debate Conclusion, and flags it (`differs_from_evidence_verdict` + `verdict_note`) when it disagrees. It is generated after the judge, so it can compare itself with the verdict.
+A **one-sentence** answer from **general knowledge**, generated **only when there is nothing to debate** (no evidence supports or contradicts the claim). It is labelled as AI general knowledge in the UI, with a warning that it is not based on research, so users are never left with no answer at all. When a debate happens, it is not generated (saving one Gemini call); the evidence-based Debate Conclusion is the answer instead.
 
 ### Debate conclusion (`backend/app/agents/debate_summary.py`)
 
@@ -376,10 +376,8 @@ A plain-language answer and summary of the debate, built **only** from the trans
 
 | | Quick answer | Debate conclusion |
 |---|---|---|
-| Based on | General medical knowledge | Only the debate and the judge's verdict |
-| Can disagree with the verdict? | Yes, and it says so | No, it must match the verdict |
-
-Disagreement between the two usually means either the retrieved studies didn't fully cover the claim, or the AI's general knowledge is outdated or wrong. Neither is automatically right, which is why the app shows the disagreement instead of hiding it.
+| Shown when | No debate was possible | A debate took place |
+| Based on | General knowledge | Only the debate and the judge's verdict |
 
 ### Judge agent (`backend/app/judge/`)
 
@@ -510,12 +508,12 @@ Run PRO vs CON debate                              (progress reported before eac
         ↓
 Judge evaluates the debate and evidence
         ↓
-Debate conclusion + one-line quick answer
+Debate conclusion (or, if no debate, a one-line quick answer)
         ↓
 API returns everything to the frontend
 ```
 
-> **Note for evaluation (Person 5):** when `transcript` is empty, the verdict is rule-based, not produced by the judge. Its `confidence` and `misinformation_risk` are placeholders (the schema requires them), so exclude these rows from judge accuracy and calibration metrics and report them separately (e.g. "X of 150 claims had no debatable evidence"). It is also worth measuring how often the quick answer disagrees with the verdict (`background.differs_from_evidence_verdict`), as an indicator of retrieval gaps.
+> **Note for evaluation (Person 5):** when `transcript` is empty, the verdict is rule-based, not produced by the judge. Its `confidence` and `misinformation_risk` are placeholders (the schema requires them), so exclude these rows from judge accuracy and calibration metrics and report them separately (e.g. "X of 150 claims had no debatable evidence").
 
 > **Security:** `/config/keys` writes to `.env` and is limited to local requests. Remove it or add authentication before any public deployment.
 
@@ -530,20 +528,20 @@ User enters a health claim → "Check claim"
         ↓
 Live progress bar + collapsible step-by-step log (from /verify/stream)
         ↓
-Quick answer (one line) + how the claim was checked
+No debate possible? → Quick answer (general knowledge) + plain-language notice
+        ↓
+Live Evidence Debate: PRO and CON chat bubbles, revealed turn by turn
+        ↓
+Traceable sources · Strongest evidence against this verdict
         ↓
 Summary cards: Judge's verdict (agreement ring) · Misinformation risk · Evidence by study quality
         ↓
 Debate Conclusion in plain language
         ↓
-The debate: PRO card · CON card · Traceable sources (revealed turn by turn)
-        ↓
-Strongest evidence against this verdict
-        ↓
 Detailed Clinical Dossier: judge reasoning + limitations + PubMed literature (stance filter)
 ```
 
-- Dashboard-style layout with a navy header and cream cards; cards set their own colours, so they are readable in both light and dark mode, and stack into one column on phones.
+- Navy header, chat-style debate, and cream summary cards; cards set their own colours, so they are readable in both light and dark mode, and stack into one column on phones.
 - Only real pipeline data is shown. The verdict ring is labelled **agreement** (it is the judge's agreement rate, not a probability), and the quality card shows **counts** per study type rather than invented weights.
 - Sidebar: ✅/❌ status for each key and an *Add or update keys* form; it collapses after keys are set up successfully.
 
