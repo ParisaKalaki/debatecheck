@@ -718,7 +718,7 @@ git push -u origin personX-your-part
 ## Live Deployment
 DebateCheck is publicly deployed on Render.
 
-**[Launch DebateCheck — Live Web App](https://debatecheck-frontend.onrender.com)**
+**[Launch DebateCheck — Live Web App](https://debatecheck.onrender.com/)**
 
 **How to use:**
 1. Open the Live Demo link above.
