@@ -235,7 +235,7 @@ All except `DEBATECHECK_API_URL` go in `.env`.
 - `backend/app/core/` shared schemas, lazy API clients (`llm_clients.py`), key settings (`settings.py`)
 - `backend/tests/` saved test fixtures (real pipeline outputs)
 - `frontend/` Streamlit web app — DONE (Person 4, Person 1, Person 2)
-- `evaluation/` benchmarking — not started (Person 5)
+- `evaluation/` benchmarking — DONE (Person 5)
 
 ## Full pipeline
 
@@ -515,8 +515,6 @@ API returns everything to the frontend
 
 > **Note for evaluation (Person 5):** when `transcript` is empty, the verdict is rule-based, not produced by the judge. Its `confidence` and `misinformation_risk` are placeholders (the schema requires them), so exclude these rows from judge accuracy and calibration metrics and report them separately (e.g. "X of 150 claims had no debatable evidence").
 
-> **Security:** `/config/keys` writes to `.env` and is limited to local requests. Remove it or add authentication before any public deployment.
-
 #### Frontend (`frontend/app.py`)
 
 ```text
@@ -716,12 +714,13 @@ git push -u origin personX-your-part
 ```
 
 ## Live Deployment
+
 DebateCheck is publicly deployed on Render.
 
-**[Launch DebateCheck — Live Web App](https://debatecheck.onrender.com/)**
+**Live Web App:** https://debatecheck.onrender.com/
 
 **How to use:**
-1. Open the Live Demo link above.
+1. Open the Live Web App URL above.
 2. Enter a health-related claim.
 3. Click **Check claim**.
 4. Explore the retrieved PubMed evidence, PRO/CON multi-agent debate, and final judge verdict.
