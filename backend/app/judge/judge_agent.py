@@ -24,13 +24,12 @@ from pathlib import Path
 import groq
 from dotenv import load_dotenv
 
+from app.core.llm_clients import get_groq_client
 from app.core.schemas import DebateTurn, EvidenceSnippet, JudgeVerdict
 
 # Load .env from the project root
 env_path = Path(__file__).resolve().parents[3] / ".env"
 load_dotenv(dotenv_path=env_path)
-
-client = groq.Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 # openai/gpt-oss-120b is OpenAI's open-weight reasoning model, served free via Groq's own hardware 
 MODEL = os.getenv("JUDGE_MODEL", "openai/gpt-oss-120b")
@@ -165,7 +164,7 @@ def _seconds_until_retry(error: groq.RateLimitError, default: float = 15.0) -> f
 def _call_groq_with_retry(max_retries: int = 2, **kwargs):
     for attempt in range(max_retries + 1):
         try:
-            return client.chat.completions.create(**kwargs)
+            return get_groq_client().chat.completions.create(**kwargs)
         except groq.RateLimitError as e:
             if attempt == max_retries:
                 raise  # out of retries -- let the real error surface

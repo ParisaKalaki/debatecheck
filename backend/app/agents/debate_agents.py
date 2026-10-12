@@ -11,7 +11,7 @@ import re
 from pathlib import Path
 
 from dotenv import load_dotenv
-from google import genai
+from app.core.llm_clients import get_gemini_client
 from google.genai import types
 from pydantic import BaseModel, ValidationError
 
@@ -21,7 +21,6 @@ from app.core.schemas import DebateTurn, EvidenceSnippet
 env_path = Path(__file__).resolve().parents[3] / ".env"
 load_dotenv(dotenv_path=env_path)
 
-client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 MODEL = os.getenv("DEBATE_MODEL", "gemini-3.5-flash-lite")
 
 # Matches inline ID brackets like "[E-42143317-5]" or "[E-42143317-5, E-42143317-6]"
@@ -47,33 +46,42 @@ ROLE = {
 
 # ---------- Prompts ----------
 
-OPENING_PROMPT = """
-You are the {agent} agent debating a health claim. Your role is to {role}.
+OPENING_PROMPT = """You are the {agent} agent debating a health claim. Your role is to {role}.
 
 Claim: "{claim}"
 
-Use only the evidence snippets below (each with an ID, stance, and metadata).
+Use ONLY the evidence snippets below (each has an ID, stance, and quality metadata).
 
 {evidence}
 
-Guidelines:
-- Cite at least one snippet ID per point (IDs go in "cited_ids", not in the text).
-- Do not fabricate data.
-- Prioritize high‑quality evidence.
-- Keep each point short (1‑2 sentences, under 30 words).
+Rules:
+1. Every point MUST cite at least one snippet ID. IDs go ONLY in "cited_ids", never in the text.
+   Points without a valid ID are discarded.
+2. Never invent studies, numbers, or findings that are not stated in the cited snippet.
+3. Do not overstate evidence. Describe certainty, effect size, and study quality exactly as the
+   snippet states them (e.g. never turn "moderate-certainty" into "high-certainty", or a "trend"
+   into a "significant" effect). If a study is observational, small, or its sample size is not
+   stated, do not present it as definitive.
+4. Prioritise higher-quality evidence (systematic reviews, meta-analyses, RCTs, large samples).
+5. Use neutral snippets only if they genuinely help your side, and never misrepresent them.
+6. If the evidence does not actually address the claim (e.g. a different population, outcome,
+   or species), say so plainly instead of stretching it to fit your side.
+7. Give 2-3 points, each 1-2 sentences and under 30 words.
 
-Tone: Speak like two smart colleagues chatting over coffee. Use first‑person ("I", "we") and a friendly, conversational style. Directly address the other debater (e.g., "I think you're right...", "Actually, here's what the data shows...").
+Tone: speak like a smart colleague chatting over coffee - first person ("I", "we"), friendly
+and plain, with no jargon unless you briefly explain it. Being conversational must never make
+a finding sound stronger than the snippet says.
 
-Examples:
-Stiff: "A systematic review and network meta-analysis of randomized controlled trials involving children under 18 years old found that high-dose vitamin D demonstrated the greatest potential effect in preventing respiratory infections compared to other nutritional supplements and placebo."
-Conversational: "Based on this large review of clinical trials, I don't think this is harmless — high-dose vitamin D actually reduced kids' respiratory infections more than a placebo."
+Example:
+Stiff: "A systematic review and network meta-analysis of randomized controlled trials found that
+high-dose vitamin D demonstrated the greatest potential effect in preventing respiratory infections."
+Conversational: "A big review of clinical trials found high-dose vitamin D had the most potential
+for preventing kids' respiratory infections - though it was a trend, not a definite effect."
 
 Return JSON: {{"points": [{{"text": "your point", "cited_ids": ["snippet_id"]}}]}}
 """
 
-# Opening prompt defined above
-
-REBUTTAL_PROMPT = """You are a {agent} debater. Your role is to {role} in this rebuttal round.
+REBUTTAL_PROMPT = """You are the {agent} debater. Your role is to {role} in this rebuttal round.
 
 Claim: "{claim}"
 
@@ -87,27 +95,27 @@ EVIDENCE THE OPPONENT CITED:
 {opp_evidence}
 
 Rules:
-1. Respond directly to the opponent's points. Point out where they overstated findings, ignored study limitations, or overlooked counter-evidence.
-2. Every point MUST cite at least one ID from YOUR EVIDENCE or EVIDENCE THE OPPONENT CITED. Points without a valid ID are discarded.
+1. Respond directly to the opponent's points. Point out where they overstated findings,
+   ignored study limitations, or used evidence that does not actually address the claim.
+2. Every point MUST cite at least one ID from YOUR EVIDENCE or EVIDENCE THE OPPONENT CITED.
+   IDs go ONLY in "cited_ids", never in the text. Points without a valid ID are discarded.
 3. Never invent studies, numbers, or findings not stated in the cited snippet.
-4. Put snippet IDs ONLY in "cited_ids", NEVER inside the point text itself.
-5. Describe certainty, effect size, and study quality accurately as the snippet states them.
+4. Describe certainty, effect size, and study quality exactly as the snippet states them.
+5. If your own evidence does not actually address the claim, admit it rather than stretching it.
+6. Give 2-3 points, each 1-2 sentences and under 30 words.
 
-TONE & STYLE -- CONVERSATIONAL, FRIENDLY DEBATE:
-Speak like a colleague over coffee. Directly address the opponent (e.g., "I think you're wrong about that...", "Actually, here's the thing...", "Hold on, you're only looking at half the picture..."). Keep points short (1-2 sentences, under 30 words).
+Tone: conversational, friendly debate - speak like a colleague over coffee and address the
+opponent directly (e.g. "Actually, here's the thing...", "Hold on, you're only looking at half
+the picture..."). Being conversational must never make a finding sound stronger than the snippet says.
 
-STUDY THESE EXAMPLES TO MATCH THE CONVERSATIONAL PATTERN:
-Example 1:
-- STIFF (DO NOT WRITE LIKE THIS): "Direct comparison meta-analysis has shown no statistically significant differences between low-dose vitamin D and placebo regarding the prevention of childhood respiratory infections."
-- CONVERSATIONAL (WRITE LIKE THIS): "Actually, I think you're wrong about that -- a direct comparison study found no real difference between low-dose vitamin D and a placebo. The dose really matters here, and you're only looking at the high-dose result."
-
-Example 2:
-- STIFF (DO NOT WRITE LIKE THIS): "The opponent's assertion regarding universal prevention is undermined by Cochrane systematic review data demonstrating merely low-certainty evidence of modest effect size."
-- CONVERSATIONAL (WRITE LIKE THIS): "You're overstating your case -- that Cochrane review you cited warns that the evidence is low-certainty and only found a slight drop in doctor visits."
-
-Example 3:
-- STIFF (DO NOT WRITE LIKE THIS): "The evidence cited by the affirmative is limited by observational methodology, which precludes causal attribution."
-- CONVERSATIONAL (WRITE LIKE THIS): "Hold on -- that study was just observational, not a controlled trial. You can't claim vitamin D caused that outcome when other lifestyle factors weren't accounted for."
+Examples:
+- Stiff: "Direct comparison meta-analysis has shown no statistically significant differences
+  between low-dose vitamin D and placebo."
+  Conversational: "Actually, a direct comparison found no real difference between low-dose
+  vitamin D and a placebo - you're only looking at the high-dose result."
+- Stiff: "The evidence cited by the affirmative is limited by observational methodology."
+  Conversational: "Hold on - that study was just observational, not a controlled trial, so it
+  can't show vitamin D caused that outcome."
 
 Return JSON in this format:
 {{"points": [{{"text": "your point", "cited_ids": ["snippet_id"]}}]}}
@@ -147,7 +155,7 @@ def _call_llm(prompt: str, retries: int = 2) -> AgentOutput:
     )
     last_err = None
     for _ in range(retries):
-        response = client.models.generate_content(model=MODEL, contents=prompt, config=config)
+        response = get_gemini_client().models.generate_content(model=MODEL, contents=prompt, config=config)
         try:
             return AgentOutput.model_validate_json(response.text)
         except ValidationError as e:

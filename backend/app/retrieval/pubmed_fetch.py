@@ -16,6 +16,8 @@ def fetch_abstracts(pmids: list[str]) -> list[dict]:
     Given a list of PubMed IDs, fetch each paper's title, abstract, and
     publication date. Returns a list of dicts — one per paper.
     """
+    Entrez.email = os.getenv("NCBI_EMAIL", "your_email@example.com")
+    Entrez.api_key = os.getenv("NCBI_API_KEY") or None
     handle = Entrez.efetch(db="pubmed", id=",".join(pmids), rettype="abstract", retmode="xml")
     records = Entrez.read(handle)
     handle.close()
