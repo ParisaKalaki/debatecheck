@@ -714,3 +714,40 @@ git checkout -b personX-your-part
 git push -u origin personX-your-part
 # then open a pull request into main
 ```
+
+## Live Deployment
+
+DebateCheck is publicly deployed on Render.
+
+- **Live Web App:** https://debatecheck-frontend.onrender.com
+- **Backend API:** https://debatecheck-backend.onrender.com
+
+### Deployment Architecture
+
+```text
+User
+  -> Streamlit Frontend (Render)
+  -> FastAPI Backend (Render)
+  -> PubMed Evidence Retrieval
+  -> PRO / CON Multi-Agent Debate
+  -> LLM Judge
+  -> Verdict, Confidence, and Misinformation Risk
+```
+
+### Render Configuration
+
+**Backend**
+
+```text
+Root Directory: backend
+Build Command: pip install -r requirements.txt
+Start Command: python -m uvicorn app.api.main:app --host 0.0.0.0 --port $PORT
+```
+
+**Frontend**
+
+```text
+Root Directory: frontend
+Build Command: pip install streamlit requests
+Start Command: streamlit run app.py --server.address 0.0.0.0 --server.port $PORT
+```
