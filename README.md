@@ -716,38 +716,14 @@ git push -u origin personX-your-part
 ```
 
 ## Live Deployment
-
 DebateCheck is publicly deployed on Render.
 
-- **Live Web App:** https://debatecheck-frontend.onrender.com
-- **Backend API:** https://debatecheck-backend.onrender.com
+**[Launch DebateCheck — Live Web App](https://debatecheck-frontend.onrender.com)**
 
-### Deployment Architecture
+**How to use:**
+1. Open the Live Demo link above.
+2. Enter a health-related claim.
+3. Click **Check claim**.
+4. Explore the retrieved PubMed evidence, PRO/CON multi-agent debate, and final judge verdict.
 
-```text
-User
-  -> Streamlit Frontend (Render)
-  -> FastAPI Backend (Render)
-  -> PubMed Evidence Retrieval
-  -> PRO / CON Multi-Agent Debate
-  -> LLM Judge
-  -> Verdict, Confidence, and Misinformation Risk
-```
-
-### Render Configuration
-
-**Backend**
-
-```text
-Root Directory: backend
-Build Command: pip install -r requirements.txt
-Start Command: python -m uvicorn app.api.main:app --host 0.0.0.0 --port $PORT
-```
-
-**Frontend**
-
-```text
-Root Directory: frontend
-Build Command: pip install streamlit requests
-Start Command: streamlit run app.py --server.address 0.0.0.0 --server.port $PORT
-```
+> **Note:** The application is hosted on Render's free tier. Initial loading may take approximately one minute after inactivity. Claim verification may take additional time due to evidence retrieval, AI processing, and API rate limits.
