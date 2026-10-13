@@ -1,59 +1,57 @@
 # DebateCheck
 
-Multi-agent LLM system for evidence-grounded health claim verification. Two AI agents (PRO and CON) debate a submitted health claim using quality-weighted evidence retrieved from PubMed. A judge agent evaluates the debate and produces a verdict, an agreement-based confidence score, a misinformation risk level, and the strongest counter-evidence. The app also gives a plain-language conclusion of the debate, and a one-line quick answer when no evidence could be debated.
+Evidence-grounded health claim verification. Two AI agents (PRO and CON) debate a claim using studies
+retrieved from PubMed, and a judge weighs the arguments by study quality. The judge returns a verdict, an
+agreement-based confidence score, a misinformation risk level, and the strongest counter-evidence.
 
-A traditional NLP baseline (keyword retrieval + stance classifier) is built alongside for comparison.
+**Live demo:** https://debatecheck.onrender.com/ (free tier: allow about a minute to wake up)
+**poster:** see [`docs/`](docs/)
 
-> Course project — 36118 Applied Natural Language Processing, UTS, Spring 2026 (AT2)
+![DebateCheck screenshot](docs/screenshot.png)
 
 > ⚠️ DebateCheck is an educational evidence-exploration tool. It does not give medical advice.
 
-## Team Members
+Course project: 36118 Applied Natural Language Processing, UTS, Spring 2026 (AT2).
+Team: Parisasadat Kalaki, Agam Singh Saini, Chenchira Bamrung, Ezgi Kemer Alp, Seyoung Kim.
 
-|  Person  | Student Name       | Student ID |
-| :------: | ------------------ | :--------: |
-| Person 1 | Parisasadat Kalaki |  25969686  |
-| Person 2 | Agam Singh Saini   |  25531702  |
-| Person 3 | Chenchira Bamrung  |  26037349  |
-| Person 4 | Ezgi Kemer Alp     |  25510658  |
-| Person 5 | Seyoung Kim        |  25726050  |
+## How it works
 
----
+![DebateCheck architecture](docs/architecture.jpg)
 
-## Quick Start (macOS and Windows)
+Border colour shows the external service (blue: Gemini, green: PubMed, amber: Groq). Dashed arrows show
+fallbacks and evaluation. If no snippet supports or contradicts the claim, the debate and judge are skipped,
+the verdict is "Unverifiable", and a one-line general-knowledge quick answer is shown, clearly labelled.
+
+## Quick start
 
 ### 1. Prerequisites
 
-| What                     | Why                                                   | Get it                                                    |
-| ------------------------ | ----------------------------------------------------- | --------------------------------------------------------- |
-| **Git**                  | to download the code                                  | [git-scm.com/downloads](https://git-scm.com/downloads)    |
-| **Python 3.10 or newer** | runs the app (the team has used 3.14)                 | [python.org/downloads](https://www.python.org/downloads/) |
-| **uv**                   | installs packages and creates the virtual environment | installed in step 3 below                                 |
+- **Git** ([git-scm.com](https://git-scm.com/downloads))
+- **Python 3.10 or newer** (tested on 3.12) ([python.org](https://www.python.org/downloads/))
+- **uv**, installed in step 3
 
-### 2. Get your API keys (all free)
+### 2. Free API keys
 
-| Key              | What it is                                                                                          | Where to get it                                                                                     |
-| ---------------- | --------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `NCBI_EMAIL`     | Not a key — just your email address. PubMed requires it to identify who is calling.                 | Use your own email                                                                                  |
-| `NCBI_API_KEY`   | _Optional._ Raises the PubMed rate limit.                                                           | [ncbi.nlm.nih.gov](https://www.ncbi.nlm.nih.gov/) → sign in → Account Settings → API Key Management |
-| `GOOGLE_API_KEY` | Gemini — used for claim analysis, stance classification, debate agents, quick answer and conclusion | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) → **Create API key**               |
-| `GROQ_API_KEY`   | Groq — used by the judge agent                                                                      | [console.groq.com/keys](https://console.groq.com/keys) → **Create API Key**                         |
+| Key              | Used for                                           | Get it                                                               |
+| ---------------- | -------------------------------------------------- | -------------------------------------------------------------------- |
+| `NCBI_EMAIL`     | Your email. PubMed requires it.                    | Use your own                                                         |
+| `NCBI_API_KEY`   | Optional. Raises the PubMed rate limit.            | [ncbi.nlm.nih.gov](https://www.ncbi.nlm.nih.gov/) → Account Settings |
+| `GOOGLE_API_KEY` | Gemini: claim analysis, stance, debate, conclusion | [aistudio.google.com/apikey](https://aistudio.google.com/apikey)     |
+| `GROQ_API_KEY`   | Groq: the judge                                    | [console.groq.com/keys](https://console.groq.com/keys)               |
 
-Never share these keys or commit your `.env` file (it is already in `.gitignore`).
+Never share your keys or commit your `.env` file (it is in `.gitignore`).
 
 ### 3. Install
 
-**macOS (Terminal)**
+**macOS**
 
 ```bash
 git clone https://github.com/ParisaKalaki/debatecheck.git
 cd debatecheck
-
-curl -LsSf https://astral.sh/uv/install.sh | sh     # install uv (restart Terminal afterwards)
-
+curl -LsSf https://astral.sh/uv/install.sh | sh     # restart Terminal afterwards
 uv venv
 source .venv/bin/activate
-uv pip install -r backend/requirements.txt          # installs backend + frontend packages
+uv pip install -r backend/requirements.txt
 ```
 
 **Windows (PowerShell)**
@@ -61,26 +59,21 @@ uv pip install -r backend/requirements.txt          # installs backend + fronten
 ```powershell
 git clone https://github.com/ParisaKalaki/debatecheck.git
 cd debatecheck
-
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"   # install uv (restart PowerShell afterwards)
-
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"   # restart PowerShell
 uv venv
 .venv\Scripts\activate
-uv pip install -r backend/requirements.txt          # installs backend + frontend packages
+uv pip install -r backend/requirements.txt
 ```
 
-> **Windows:** if `.venv\Scripts\activate` is blocked with a "running scripts is disabled" error, run this once and try again:
-> `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`
+If Windows blocks activation, run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once.
 
 ### 4. Add your keys
 
-**Easiest: do it in the app.** Skip this step, start the app (step 5), and it shows a **one-time setup form** for any missing keys. Each key is checked before it is saved, and ticking _"Remember these keys on this computer"_ saves them to `.env` for next time. You can change them later under **API keys** in the sidebar.
-
-**Or edit `.env` yourself:**
+The easiest way is to start the app (step 5). It shows a one-time setup form for missing keys, checks each
+key, and can save them to `.env`. Or edit `.env` yourself:
 
 ```bash
-cp .env.example .env        # macOS   (then: open -e .env)
-copy .env.example .env      # Windows (then: notepad .env)
+cp .env.example .env        # Windows: copy .env.example .env
 ```
 
 ```dotenv
@@ -88,641 +81,123 @@ NCBI_EMAIL=you@example.com
 NCBI_API_KEY=
 GOOGLE_API_KEY=your-gemini-key
 GROQ_API_KEY=your-groq-key
-ENVIRONMENT=development
 ```
 
 ### 5. Start the app (two terminals)
 
-The app has two parts that run at the same time: a **backend** (FastAPI, does the work) and a **frontend** (Streamlit, the website). Open **two** terminal windows in the `debatecheck` folder and **activate the virtual environment in each one**.
+Open two terminals in the `debatecheck` folder and activate the virtual environment in each.
 
-**Terminal 1 — backend**
+**Terminal 1: backend**
 
 ```bash
-# macOS
-source .venv/bin/activate
 cd backend
 uvicorn app.api.main:app --reload --port 8002
 ```
 
-```powershell
-# Windows
-.venv\Scripts\activate
-cd backend
-uvicorn app.api.main:app --reload --port 8002
-```
+Wait for `Application startup complete` (check <http://127.0.0.1:8002/health>).
 
-Wait for `Application startup complete`. You can check it is running at <http://127.0.0.1:8002/health>. The backend starts even if keys are missing.
-
-**Terminal 2 — frontend** (from the `debatecheck` root folder, not `backend/`)
+**Terminal 2: frontend** (from the `debatecheck` root, not `backend/`)
 
 ```bash
-# macOS
-source .venv/bin/activate
 streamlit run frontend/app.py
 ```
 
-```powershell
-# Windows
-.venv\Scripts\activate
-streamlit run frontend/app.py
-```
+The app opens at <http://localhost:8501>. Press `Ctrl + C` in both terminals to stop.
 
-Your browser opens <http://localhost:8501> automatically. If it doesn't, open that link yourself.
+### 6. Demo mode (no keys, no API calls)
 
-To stop the app, press `Ctrl + C` in both terminals.
-
-### 6. Demo mode (no API calls, no keys needed)
-
-To try the interface without using any API quota, add this line to `.env` and restart the backend:
-
-```dotenv
-DEBATECHECK_USE_FIXTURE=true
-```
-
-Every claim then returns the saved vitamin D example instantly, and the key setup screen is skipped. Set it back to `false` (or delete the line) for real results.
-
----
+Add `DEBATECHECK_USE_FIXTURE=true` to `.env` and restart the backend. Every claim then returns the saved
+vitamin D example instantly. Set it back to `false` for real results.
 
 ## Using the app
 
-1. **Enter a health claim** in the search box, e.g. _"Vitamin D supplements prevent respiratory infections"_ or _"Intermittent fasting increases longevity"_.
-2. Click **Check claim**.
-3. **Watch the progress.** A progress bar shows the current step and the elapsed time. Click **"Verifying your claim…"** to open the step-by-step log (searching PubMed, checking each study, each debate turn, the judge, the conclusion). A run usually takes 1–3 minutes; the timer keeps ticking during slow steps (e.g. when the judge waits on Groq's rate limit), so you can see it is still working.
+Enter a specific health claim (for example, _"Vitamin D supplements prevent respiratory infections"_) and
+click **Check claim**. A run usually takes 1 to 3 minutes. The page shows:
 
-### Reading the results (top to bottom)
+- **Live Evidence Debate:** PRO and CON arguments as a chat over two rounds. Every point links to its PubMed source.
+- **Judge's verdict, misinformation risk, evidence by study quality:** summary cards. The ring shows
+  _agreement_ across four judge runs. It is not the probability that the claim is true.
+- **Strongest evidence against the verdict**, and a **plain-language conclusion**.
+- **Detailed dossier (collapsed):** the judge's reasoning, limitations, and every retrieved snippet, filterable by stance.
 
-| Section                                                | What it shows                                                                                                                                                                                             |
-| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Live Evidence Debate**                               | PRO and CON argue as a chat conversation over two rounds (opening, rebuttal), revealed turn by turn. Every point links to its PubMed source (**Source ↗**).                                               |
-| **Traceable sources**                                  | Each paper cited in the debate (S1, S2, …) with its study type, year and credibility dots, linking to PubMed.                                                                                             |
-| **Strongest evidence against this verdict** (gold box) | The opposing side's best point, so you can judge whether the verdict could be wrong.                                                                                                                      |
-| **Judge's verdict** card                               | The verdict, a ring showing **agreement** (how many of 4 independent judge runs chose this verdict — not a probability that the claim is true), a plain-language answer, and how many sources were cited. |
-| **Misinformation risk** card                           | Low / Medium / High on a scale, with the reason.                                                                                                                                                          |
-| **Evidence by study quality** card                     | How many retrieved snippets came from each study type (strongest first), plus how many support vs contradict the claim. These are counts; the judge weighs quality, not counts.                           |
-| **Debate Conclusion • In Plain Language**              | A short summary of the debate and its result, built only from the debate and the verdict.                                                                                                                 |
-| **Detailed Clinical Dossier** (collapsed)              | The judge's reasoning and evidence limitations, and every retrieved PubMed snippet (filterable by support / contradict / neutral) with study design, sample size, year and credibility.                   |
+Name the intervention and the outcome. Niche topics may have little PubMed evidence and return
+"Unverifiable", which is an honest result, not an error.
 
-**When there is nothing to debate.** If PubMed finds no studies, or none that directly **support or contradict** the claim, the debate is skipped. The app then shows:
+## Results (101 PubHealth claims)
 
-- a **Quick Answer • General Knowledge** card: a one-line answer from the AI's general knowledge, with a red ⚠️ note that it is AI-generated and not based on research;
-- a plain-language notice (_"Not enough research to debate this claim"_ or _"No research found for this claim"_) with tips for rephrasing, plus any loosely related studies it found.
+|                                         | NLI baseline | DebateCheck |
+| --------------------------------------- | -----------: | ----------: |
+| Accuracy, all claims                    |        7.92% |       9.90% |
+| Macro-F1, all claims                    |        7.31% |      10.86% |
+| Accuracy, claims with evidence (n = 17) |       35.29% |      47.06% |
+| Macro-F1, claims with evidence          |       23.08% |      35.54% |
 
-### Tips for good results
+Usable PubMed evidence was retrieved for only 17 of 101 claims (16.8%), which is the main bottleneck, and
+the remaining claims defaulted to "unproven". All 181 citation IDs produced by the agents were valid, and
+the mean time per evidence-bearing claim was about 21 seconds. The difference rests on a small subset, so
+treat it as preliminary. The full methodology and discussion are in the report (`docs/`), and the scripts
+and result files are in `evaluation/`.
 
-- Make the claim **specific and about human health**: name the intervention and the outcome (_"X improves/prevents/causes Y"_).
-- Very new or niche topics may have little PubMed evidence, which gives _Mixed_ or _Unverifiable_ results. That is an honest outcome, not an error.
-- Groq's free tier is rate-limited, so leave a short pause between claims.
+## Repository structure
 
----
+```text
+backend/app/retrieval/   claim analysis, PubMed search, filtering, snippets, stance
+backend/app/baseline/    traditional NLI baseline
+backend/app/agents/      PRO/CON debate (LangGraph), quick answer, debate conclusion
+backend/app/judge/       quality-aware judge with self-consistency
+backend/app/api/         FastAPI routes (verify, streaming, key setup)
+backend/app/core/        shared schemas, lazy API clients, key settings
+backend/tests/           saved fixtures from real pipeline runs
+frontend/                Streamlit app
+evaluation/              benchmark scripts and results
+docs/                    report, poster, screenshots
+```
 
-## Troubleshooting
+### Run a single component
 
-| Problem                                                                | Fix                                                                                                                                                                                                                                                                                                       |
-| ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ModuleNotFoundError` (e.g. `No module named 'groq'`)                  | The virtual environment isn't active, or packages are out of date. Activate it and run `uv pip install -r backend/requirements.txt` again (do this after every `git pull` that changes requirements).                                                                                                     |
-| `uv` / `streamlit` / `uvicorn` "not recognized" or "command not found" | Restart the terminal after installing uv, and make sure the virtual environment is activated.                                                                                                                                                                                                             |
-| **"Can't reach the DebateCheck backend"**                              | Terminal 1 (backend) isn't running or crashed. Start it, check <http://127.0.0.1:8002/health>, then refresh the page.                                                                                                                                                                                     |
-| **"An API key is missing"**                                            | Open **API keys** in the sidebar and add it.                                                                                                                                                                                                                                                              |
-| **"Could not verify this key – …"** when saving a key                  | The message after the dash is the real error from Google or Groq (e.g. invalid key, no internet). The full details are printed in Terminal 1.                                                                                                                                                             |
-| "Backend returned 500" / "Verification pipeline failed"                | Check Terminal 1 for the error.                                                                                                                                                                                                                                                                           |
-| Very slow run, or `rate limited by Groq` in Terminal 1                 | Expected on Groq's free tier. The judge waits and retries automatically.                                                                                                                                                                                                                                  |
-| Port 8002 already in use                                               | Start the backend on another port (e.g. `--port 8003`) and tell the frontend: macOS `export DEBATECHECK_API_URL=http://127.0.0.1:8003`, Windows `$env:DEBATECHECK_API_URL="http://127.0.0.1:8003"`, then run Streamlit in that same terminal. (This variable is read from the terminal, not from `.env`.) |
-| Claim box doesn't have the navy styling                                | The styling needs a recent Streamlit version (`uv pip install -U streamlit`). Everything still works without it.                                                                                                                                                                                          |
-| Import errors when running a single file                               | Run modules from `backend/` with `python -m ...` (see below), not `python file.py`.                                                                                                                                                                                                                       |
-
----
-
-## How to run individual components (development/testing)
-
-All code uses package imports (`from app.retrieval... import ...`), so **always run from the `backend/` folder using `python -m`**:
+All code uses package imports, so run from `backend/` with `python -m`:
 
 ```bash
 cd backend
-python -m app.retrieval.claim_analyzer        # claim → checkable claim + PubMed query
-python -m app.retrieval.evidence_pipeline     # evidence retrieval test
-python -m app.baseline.nli_classifier         # traditional baseline test
-python -m app.agents.debate_graph             # debate agents test (uses saved fixture)
-python -m app.judge.judge_agent               # judge agent test (uses saved fixture)
-python -m app.agents.explainer                # one-line quick answer test
-python -m app.agents.debate_summary           # debate conclusion test (uses saved fixtures)
+python -m app.retrieval.evidence_pipeline     # evidence retrieval
+python -m app.baseline.nli_classifier         # traditional baseline
+python -m app.agents.debate_graph             # debate (uses saved fixture)
+python -m app.judge.judge_agent               # judge (uses saved fixture)
 ```
 
-Running a file directly (e.g. `python evidence_pipeline.py` from inside `retrieval/`) will fail with import errors.
-
-### Optional settings
-
-| Variable                  | Default                 | Purpose                                                                    |
-| ------------------------- | ----------------------- | -------------------------------------------------------------------------- |
-| `DEBATECHECK_USE_FIXTURE` | `false`                 | `true` = demo mode with saved results, no API calls or keys                |
-| `DEBATE_MODEL`            | `gemini-3.5-flash-lite` | Debate agents model                                                        |
-| `ANALYZER_MODEL`          | `gemini-3.5-flash-lite` | Claim analyzer model                                                       |
-| `EXPLAINER_MODEL`         | `gemini-3.5-flash-lite` | Quick-answer model                                                         |
-| `SUMMARY_MODEL`           | `gemini-3.5-flash-lite` | Debate conclusion model                                                    |
-| `JUDGE_MODEL`             | `openai/gpt-oss-120b`   | Judge model (Groq)                                                         |
-| `DEBATECHECK_API_URL`     | `http://127.0.0.1:8002` | Backend address used by the frontend. Set in the **terminal**, not `.env`. |
-
-All except `DEBATECHECK_API_URL` go in `.env`.
-
----
-
-## Repo structure
-
-- `backend/app/retrieval/` evidence pipeline incl. claim analyzer — DONE (Person 1, Person 2)
-- `backend/app/baseline/` traditional NLP baseline — DONE (Person 1)
-- `backend/app/agents/` debate agents, quick-answer explainer, debate conclusion — DONE (Person 2)
-- `backend/app/judge/` judge agent — DONE (Person 3)
-- `backend/app/api/` FastAPI routes incl. streaming and key setup — DONE (Person 4, Person 2)
-- `backend/app/core/` shared schemas, lazy API clients (`llm_clients.py`), key settings (`settings.py`)
-- `backend/tests/` saved test fixtures (real pipeline outputs)
-- `frontend/` Streamlit web app — DONE (Person 4, Person 1, Person 2)
-- `evaluation/` benchmarking — DONE (Person 5)
-
-## Full pipeline
-
-```text
-User claim
-   ↓
-Claim analyzer (Gemini)        → checkable claim + PubMed query + keywords
-   ↓
-Evidence pipeline              → PubMed search → relevance filter → snippets → quality metadata → stance
-   ↓
-Any snippet that supports or contradicts the claim?
-   ├─ No  → rule-based "Unverifiable" + one-line quick answer (Gemini); debate and judge skipped
-   └─ Yes ↓
-PRO vs CON debate (LangGraph)  → 2 rounds, every point must cite a snippet ID
-   ↓
-Judge (Groq, 4 runs)           → verdict + agreement confidence + misinformation risk
-   ↓
-Debate conclusion (Gemini)     → plain-language summary of the debate result
-   ↓
-FastAPI /verify/stream (live progress) → Streamlit UI
-```
-
-## What's done
-
-### Claim analyzer (`backend/app/retrieval/claim_analyzer.py`)
-
-Turns a messy or loosely worded claim into:
-
-- `checkable_claim`: the **same** assertion restated as something a study could measure (it never corrects the claim; that is the judge's job)
-- `pubmed_query`: a PubMed boolean query that keeps the qualifiers the claim depends on (timing, dose, population)
-- `intervention_terms` / `outcome_terms`: keywords for the relevance filter
-
-If the analyzer fails, the pipeline falls back to searching the raw claim.
-
-### Evidence pipeline (`backend/app/retrieval/`)
-
-```python
-from app.retrieval.evidence_pipeline import get_evidence_with_analysis, get_evidence_for_claim
-analysis, evidence = get_evidence_with_analysis("vitamin D supplements prevent respiratory infections")
-evidence = get_evidence_for_claim("vitamin D supplements prevent respiratory infections")   # evidence only
-```
-
-Returns `EvidenceSnippet` objects (id, text, stance, study_design, sample_size, pub_date, source_credibility, source_url). `get_evidence_with_analysis` also takes an optional `on_progress(message, fraction)` callback, used for the live progress bar.
-
-- Search tries the most precise query first: analyzer query `AND humans[mh]` → analyzer query → raw claim. Results are sorted by PubMed relevance.
-- The stance prompt is **claim-generic**: Gemini first identifies the claim's intervention and outcome, and a snippet must address both to be labelled `support` or `contradict`.
-
-#### Example: Evidence Retrieval Pipeline
-
-```text
-Claim
-"Vitamin D supplements prevent respiratory infections."
-        ↓
-Claim analyzer
-Builds a PubMed query and intervention/outcome keywords
-        ↓
-PubMed search (humans only, sorted by relevance)
-Returns PubMed IDs (PMIDs)
-Example: ["42235406", "42143317", "42124073", ...]
-        ↓
-Fetch abstracts + PubMed metadata
-Gets title, abstract, publication date, and study type
-Example: "Systematic Review", "RCT", etc.
-        ↓
-Relevance filter
-Paper must mention an intervention term AND an outcome term
-Example: vitamin D + respiratory infection → keep
-         vitamin D + osteoporosis → remove
-        ↓
-Evidence snippets
-Splits relevant abstracts into small pieces
-Example: "Vitamin D supplementation reduces respiratory infections..."
-        ↓
-Study design / sample size / credibility
-Adds information about the evidence
-Example: systematic review | 31,521 participants | high
-        ↓
-Gemini
-Classifies each snippet
-Example: support / contradict / neutral
-```
-
-### Traditional baseline (`backend/app/baseline/nli_classifier.py`)
-
-Uses a pretrained NLI model to classify each evidence snippet as support, contradict, or neutral, then combines the results using a simple majority vote. No LLM prompting or agents are used. This provides a simple traditional comparison point for the agentic system.
-
-### Debate agents (`backend/app/agents/`)
-
-```python
-from app.agents.debate_graph import run_debate
-result = run_debate(claim, evidence)   # evidence = output of the evidence pipeline
-```
-
-Returns:
-
-```text
-{
-  "claim": str,
-  "transcript": list[DebateTurn],   # 4 turns: PRO r1, CON r1, PRO r2, CON r2
-  "citation_log": list[dict]        # per turn: dropped_points, invalid_ids
-}
-```
-
-How it works:
-
-```text
-Evidence snippets
-        ↓
-Split into piles
-PRO pile = support + neutral     CON pile = contradict + neutral
-        ↓
-Round 1 — Opening (LangGraph)
-PRO argues TRUE from its pile → CON argues FALSE from its pile
-        ↓
-Round 2 — Rebuttal
-Each agent sees the opponent's opening and may cite the opponent's
-snippets to call out misrepresentation
-        ↓
-Citation enforcement
-Every point must cite a valid snippet ID from the allowed evidence.
-Invalid IDs are removed; points with no valid ID are dropped and logged.
-        ↓
-DebateTurn objects (shared schema) → passed to the judge
-```
-
-- `debate_agents.py` — prompts, Gemini calls (structured JSON output), citation enforcement
-- `debate_graph.py` — LangGraph flow and `run_debate()` entry point (optional `on_progress` callback, called before each turn)
-- Agents receive each snippet's quality metadata (study design, sample size, year, credibility), are told to prioritise higher-quality evidence, describe certainty exactly as the snippet states it, and say so when evidence doesn't actually address the claim.
-- Agents speak in a conversational tone, with the rule that tone must never make a finding sound stronger than the snippet says.
-
-### Quick answer (`backend/app/agents/explainer.py`)
-
-A **one-sentence** answer from **general knowledge**, generated **only when there is nothing to debate** (no evidence supports or contradicts the claim). It is labelled as AI general knowledge in the UI, with a warning that it is not based on research, so users are never left with no answer at all. When a debate happens, it is not generated (saving one Gemini call); the evidence-based Debate Conclusion is the answer instead.
-
-### Debate conclusion (`backend/app/agents/debate_summary.py`)
-
-A plain-language answer and summary of the debate, built **only** from the transcript and the judge's verdict (no outside knowledge). It must agree with the verdict.
-
-|            | Quick answer           | Debate conclusion                       |
-| ---------- | ---------------------- | --------------------------------------- |
-| Shown when | No debate was possible | A debate took place                     |
-| Based on   | General knowledge      | Only the debate and the judge's verdict |
-
-### Judge agent (`backend/app/judge/`)
-
-```python
-from app.judge.judge_agent import judge_debate_with_confidence
-verdict = judge_debate_with_confidence(claim, transcript, evidence, n_runs=4)   # transcript/evidence = debate_graph.run_debate() output
-```
-
-Returns a `JudgeVerdict`:
-
-```text
-{
-  "reasoning": str,               # written FIRST, walks through the quality comparison
-  "verdict": str,                 # "True" | "Likely True" | "Mixed / Unclear" | "Likely False" | "False" | "Unverifiable"
-  "confidence": float,            # 0.0-1.0 -- confidence in the LABEL chosen
-  "misinformation_risk": str,     # "Low" | "Medium" | "High"
-  "risk_reason": str,
-  "top_counter_evidence": str,    # strongest point from the side OPPOSING the verdict
-  "evidence_gap_note": str | None,
-  "final_answer": str,            # computed automatically, e.g. "Based on the evidence, this claim is MOSTLY FALSE (78% confidence)."
-}
-```
-
-How it works:
-
-```text
-Debate transcript + evidence quality metadata (study_design, sample_size, pub_date, source_credibility)
-        ↓
-Evidence quality lookup table
-Every cited snippet's quality metadata, keyed by ID, so the judge can check either side's citations
-        ↓
-Groq (openai/gpt-oss-120b), structured JSON output (response_format=json_schema, strict=True)
-Weighs evidence by QUALITY (study design > sample size > recency)
-        ↓
-JudgeVerdict
-reasoning fills in first, then verdict/confidence/risk/counter-evidence stay consistent with it
-```
-
-- Runs on **Groq**, free tier (`GROQ_API_KEY` in `.env`).
-- `top_counter_evidence` is deliberately the strongest point from the side **opposing** the verdict.
-- `confidence` measures how sure the judge is that its chosen **label** is correct — this works the same way for all 6 labels, including "Mixed / Unclear" (a confident "genuinely contested" vs. an unsure one). It's the **agreement rate across `n_runs` independent runs** (see "Self-consistency confidence" below), not a single self-reported number.
-- `final_answer` isn't a separate LLM call — it's a `@computed_field` on `JudgeVerdict` (see schemas.py) that's computed automatically from verdict + confidence. Because it's just a lookup, it can never drift out of sync with those two fields, and Groq is never asked to generate it. It shows up automatically whenever a JudgeVerdict is serialized (`.model_dump()` / `.model_dump_json()`), so any API response built from one gets it for free.
-- The judge only sends evidence quality metadata for snippets actually **cited** somewhere in the transcript, not Person 1's full evidence list. A debate transcript usually cites well under half of what gets retrieved, so including the rest would just burn prompt tokens for no benefit. On real fixtures, this cuts prompt size roughly in half.
-- If Groq returns a rate-limit error, the judge automatically waits the time Groq reports and retries, up to twice, instead of crashing — this happens more often than you'd expect. See "Groq free-tier rate limit" below for details.
-
-#### Evidence quality scoring
-
-Before the judge ever sees a snippet, `study_design` is set from PubMed's own official PublicationType field when available (authoritative — curated by PubMed/NLM's indexers), falling back to regex matching on the snippet text (e.g. `"randomized controlled trial"`, `"cohort study"`) only when PubMed didn't provide one. `sample_size` is regex-only (no PubMed field for it), left `None` when nothing matches.
-
-Two different quality scales get built from `study_design`, at different points in the pipeline:
-
-**`source_credibility`** (`high` / `medium` / `low` / `unknown`) — set once, in `quality_extractor.py`, stored on the `EvidenceSnippet` itself, and shown to the judge as a quick-glance label alongside each citation:
-
-| source_credibility | study_design                                             |
-| ------------------ | -------------------------------------------------------- |
-| high               | systematic_review, meta_analysis, RCT                    |
-| medium             | cohort_study, clinical_trial, pilot_trial, observational |
-| low                | case_report, narrative_review                            |
-| unknown            | no study design could be determined                      |
-
-**`QUALITY_TIER_NOTES`** — a separate, finer-grained ordering baked directly into the judge's prompt (`judge_agent.py`), which is what the judge is actually told to weigh evidence by:
-
-| tier          | study_design                     | note                                   |
-| ------------- | -------------------------------- | -------------------------------------- |
-| 1 (strongest) | systematic_review, meta_analysis | synthesizes many studies               |
-| 2             | RCT                              | randomized, causal evidence            |
-| 3             | cohort_study, clinical_trial     | observational but structured, moderate |
-| 4             | pilot_trial, observational       | smaller / less controlled              |
-| 5 (weakest)   | case_report, narrative_review    | anecdotal or non-systematic            |
-
-Both use the same underlying ordering — the standard evidence-hierarchy pyramid from evidence-based medicine (synthesis > randomized > observational > anecdotal), so the ordering itself is a common, recognized one, just a simplification of a full grading system like GRADE or Oxford CEBM. The difference is granularity: `source_credibility` collapses tiers 1+2 into "high" and tiers 3+4 into "medium," while `QUALITY_TIER_NOTES` keeps all 5 separate. The judge's prompt also adds _"within a tier, larger sample_size and more recent pub_date both increase weight,"_ which lets it rank two studies at the same tier.
-
-Since both `study_design` detection and `sample_size` extraction are regex-based fallbacks, not guaranteed — a study design phrased unusually can come back `unknown`/`None`. The judge is explicitly told to treat that as lower-confidence evidence rather than ignore it, and to flag it in `evidence_gap_note` if it affects the verdict.
-
-#### Self-consistency confidence
-
-`judge_debate_with_confidence(claim, transcript, evidence, n_runs=4)` is the decided way to call the judge, not `judge_debate` directly. Instead of trusting one self-reported confidence number, it runs the judge `n_runs` times in parallel and uses the **fraction of runs that agree on the verdict** as confidence — e.g. "this verdict held on 3 of 4 independent runs" is a real, code-computed number, not the model's self-assessment.
-
-`judge_debate(claim, transcript, evidence)` — a single call, no self-consistency — still exists in `judge_agent.py` as the function `judge_debate_with_confidence` is built on.
-
-#### Groq free-tier rate limit
-
-Groq's free tier caps total token usage at **8000 tokens-per-minute (TPM)** per API key, shared across _every_ call the judge makes, including all `n_runs=4` calls `judge_debate_with_confidence` fires at once. This is a real, hard ceiling and it's easy to hit in normal use, not just edge cases:
-
-- Calling the judge many times in quick succession (e.g. testing several different claims within a minute or two) can trigger a `429` rate-limit error.
-- `judge_debate`'s automatic retry (`_call_groq_with_retry`) waits the time Groq itself reports and retries up to twice, so a single hit usually recovers on its own — but that wait has been anywhere from ~45 seconds to several minutes on real runs, depending on how far over the limit the request was.
-- Practical guidance: don't run several different new claims back to back without a short pause between them. A multi-minute wait mid-run is expected behavior on the free tier, not something to debug.
-- This is specific to the free tier — Groq's paid tier raises the TPM limit considerably, which would remove this constraint entirely if the project ever needed to run many claims reliably in quick succession.
-
-### Test fixtures (`backend/tests/`)
-
-- `fixture_vitd.json` — real evidence output for the vitamin D claim
-- `fixture_vitd_debate.json` — real debate transcript (input for the judge)
-- `fixture_vitd_verdict.json` — real judge verdict (used by demo mode)
-
-Use these to develop and test without calling PubMed/Gemini/Groq every time.
-
-### Shared code (`backend/app/core/`)
-
-- `schemas.py` — common data structures (`EvidenceSnippet`, `DebateTurn`, `JudgeVerdict`, `ClaimAnalysis`, `BackgroundExplainer`, `DebateConclusion`) so all components use the same format.
-- `llm_clients.py` — Gemini and Groq clients are created **lazily**, the first time they are needed, using whatever key is set at that moment. So the backend starts even without keys, and keys entered in the UI work immediately without a restart.
-- `settings.py` — checks which keys are set, validates new keys, applies them at runtime and optionally saves them to `.env`.
-
-### Web Application (`backend/app/api/` and `frontend/`)
-
-#### Backend endpoints
-
-| Endpoint              | Purpose                                                                                                                                                            |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `POST /verify`        | Full result in one response (use this for evaluation)                                                                                                              |
-| `POST /verify/stream` | Same result, streamed as newline-delimited JSON: `progress` events, a `heartbeat` every 3 s, then `result` (or `error`). Used by the UI for the live progress bar. |
-| `GET /config/status`  | Which API keys are set, and whether the app is ready                                                                                                               |
-| `POST /config/keys`   | Validate and apply API keys from the UI, optionally saving them to `.env`. Only accepts requests from the same computer.                                           |
-| `GET /health`         | Simple health check                                                                                                                                                |
-
-Request for `/verify` and `/verify/stream`: `{"claim": "...", "retmax": 8}`
-
-Response fields: `claim`, `analysis`, `verdict`, `transcript`, `evidence`, `citation_log`, `evidence_count`, `background`, `conclusion`.
-
-```text
-User health claim
-        ↓
-Analyse claim → retrieve PubMed evidence          (progress reported at each step)
-        ↓
-No snippet supports or contradicts the claim? → rule-based "Unverifiable" verdict (debate and judge skipped)
-        ↓
-Run PRO vs CON debate                              (progress reported before each turn)
-        ↓
-Judge evaluates the debate and evidence
-        ↓
-Debate conclusion (or, if no debate, a one-line quick answer)
-        ↓
-API returns everything to the frontend
-```
-
-> **Note for evaluation (Person 5):** when `transcript` is empty, the verdict is rule-based, not produced by the judge. Its `confidence` and `misinformation_risk` are placeholders (the schema requires them), so exclude these rows from judge accuracy and calibration metrics and report them separately (e.g. "X of 150 claims had no debatable evidence").
-
-#### Frontend (`frontend/app.py`)
-
-```text
-App opens → checks the backend and API keys
-        ↓
-Missing keys? → one-time setup form (keys validated, optionally saved to .env)
-        ↓
-User enters a health claim → "Check claim"
-        ↓
-Live progress bar + collapsible step-by-step log (from /verify/stream)
-        ↓
-No debate possible? → Quick answer (general knowledge) + plain-language notice
-        ↓
-Live Evidence Debate: PRO and CON chat bubbles, revealed turn by turn
-        ↓
-Traceable sources · Strongest evidence against this verdict
-        ↓
-Summary cards: Judge's verdict (agreement ring) · Misinformation risk · Evidence by study quality
-        ↓
-Debate Conclusion in plain language
-        ↓
-Detailed Clinical Dossier: judge reasoning + limitations + PubMed literature (stance filter)
-```
-
-- Navy header, chat-style debate, and cream summary cards; cards set their own colours, so they are readable in both light and dark mode, and stack into one column on phones.
-- Only real pipeline data is shown. The verdict ring is labelled **agreement** (it is the judge's agreement rate, not a probability), and the quality card shows **counts** per study type rather than invented weights.
-- Sidebar: ✅/❌ status for each key and an _Add or update keys_ form; it collapses after keys are set up successfully.
+Running a file directly (`python evidence_pipeline.py`) will fail with import errors.
+
+### Optional settings (in `.env`)
+
+| Variable                                                             | Default                 | Purpose                      |
+| -------------------------------------------------------------------- | ----------------------- | ---------------------------- |
+| `DEBATECHECK_USE_FIXTURE`                                            | `false`                 | Demo mode with saved results |
+| `DEBATE_MODEL`, `ANALYZER_MODEL`, `EXPLAINER_MODEL`, `SUMMARY_MODEL` | `gemini-3.5-flash-lite` | Gemini models                |
+| `JUDGE_MODEL`                                                        | `openai/gpt-oss-120b`   | Judge model (Groq)           |
+
+`DEBATECHECK_API_URL` (default `http://127.0.0.1:8002`) tells the frontend where the backend is. Set it in
+the terminal, not in `.env`.
+
+## Troubleshooting
+
+| Problem                                                | Fix                                                                                                                                    |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `ModuleNotFoundError`                                  | The virtual environment isn't active, or packages are out of date. Activate it and rerun `uv pip install -r backend/requirements.txt`. |
+| `uv`, `streamlit` or `uvicorn` not found               | Restart the terminal and activate the virtual environment.                                                                             |
+| "Can't reach the DebateCheck backend"                  | Terminal 1 isn't running or crashed. Start it and refresh the page.                                                                    |
+| "An API key is missing" or "Could not verify this key" | Open **API keys** in the sidebar. The message after the dash is the provider's real error.                                             |
+| "Backend returned 500"                                 | Check the error in Terminal 1.                                                                                                         |
+| Very slow run, or `rate limited by Groq`               | Expected on Groq's free tier. The judge waits and retries automatically.                                                               |
+| Port 8002 already in use                               | Start the backend on another port, then set `DEBATECHECK_API_URL` to match in the frontend's terminal.                                 |
 
 ## Known limitations
 
-- **Abstracts only, few papers.** Evidence comes from PubMed abstracts of up to 8 papers per claim, so important studies can be missed.
-- **`humans[mh]` filter.** It excludes very recent papers that PubMed hasn't indexed yet. The pipeline falls back to an unfiltered search if the filtered one finds nothing.
-- **Valid citations ≠ faithful citations.** Every debate point must cite a real snippet ID, but an agent can still overstate what a snippet says. The prompts and the judge reduce this, but don't eliminate it.
-- **`humanize_text()` in the frontend** rewrites some agent wording for readability (several rules are specific to vitamin D), which can occasionally change nuance.
-- **Placeholder values for "Unverifiable" results** (see the evaluation note above).
-- **Groq free-tier rate limits** can add multi-minute waits.
-- **Cost per claim:** roughly 1 analyzer + 1 stance call per relevant paper + 4 debate calls + 1 conclusion + 1 quick answer (Gemini), and 4 judge calls (Groq).
-
-## Evaluation (`evaluation/`)
-
-The final DebateCheck system was evaluated on a fixed set of **101 health claims** selected from the PubHealth dataset. Claims were screened for suitability for biomedical evidence verification using PubMed.
-
-The same 101 claims were evaluated using:
-
-1. **Traditional baseline** — retrieved evidence is classified using a pretrained NLI stance classifier and combined through majority voting.
-2. **DebateCheck** — the same evidence retrieval pipeline is followed by PRO/CON debate agents and an LLM judge with four-run self-consistency.
-
-Using the same evaluation claims and retrieval pipeline allows the comparison to focus on the effect of the downstream reasoning architecture.
-
-### Evaluation setup
-
-- Evaluation claims: **101**
-- Ground-truth labels: `true`, `false`, `mixture`, `unproven`
-- PubMed retrieval limit: **8 papers per query**
-- Baseline: NLI stance classification + majority vote
-- DebateCheck: PRO/CON multi-agent debate + judge
-- Judge self-consistency: **`n_runs=4`**
-- Claims for which no usable PubMed evidence was retrieved were assigned `unproven` as the evaluation prediction rather than being removed from the test set.
-- Both systems completed all **101/101 claims with zero evaluation errors**.
-
-### Final results
-
-| Metric                   | Traditional Baseline | DebateCheck (`n_runs=4`) |
-| ------------------------ | -------------------: | -----------------------: |
-| Accuracy                 |                7.92% |                **9.90%** |
-| Macro Precision          |               21.81% |               **38.35%** |
-| Macro Recall             |               16.24% |               **24.10%** |
-| Macro F1                 |                7.31% |               **10.86%** |
-| Evidence retrieved       |       17/101 (16.8%) |           17/101 (16.8%) |
-| No usable evidence       |       84/101 (83.2%) |           84/101 (83.2%) |
-| Evidence-subset Accuracy |               35.29% |               **47.06%** |
-| Evidence-subset Macro F1 |               23.08% |               **35.54%** |
-
-Across all 101 claims, DebateCheck improved accuracy by **1.98 percentage points** and Macro F1 by **3.55 percentage points** over the traditional baseline.
-
-The difference was larger when the analysis was restricted to the 17 claims for which usable PubMed evidence was retrieved. On this evidence-available subset, accuracy increased from **35.29% to 47.06%** (+11.76 percentage points), while Macro F1 increased from **23.08% to 35.54%** (+12.46 percentage points).
-
-### Retrieval bottleneck
-
-The most important finding from the end-to-end evaluation was the low evidence retrieval coverage.
-
-Both systems retrieved usable evidence for only **17 of 101 claims (16.8%)**. The remaining **84 claims (83.2%)** therefore defaulted to the `unproven` evaluation outcome.
-
-This substantially limited the overall end-to-end performance of both systems. Because the baseline and DebateCheck used the same retrieval pipeline and achieved identical retrieval coverage, the evidence-available subset provides a more focused comparison of their downstream reasoning components.
-
-When usable evidence was available, the multi-agent DebateCheck pipeline outperformed the traditional NLI majority-vote baseline. However, this downstream improvement translated into only a modest increase in overall end-to-end performance because usable PubMed evidence was retrieved for just 16.8% of the evaluation claims.
-
-Retrieval was the primary bottleneck, but not the only one. DebateCheck achieved **47.06% accuracy** on the evidence-available subset, indicating that the debate and judging stages also leave substantial room for improvement.
-
-### Prediction behaviour
-
-The traditional baseline never predicted the `mixture` class in the 101-claim evaluation. DebateCheck correctly classified **two ground-truth mixture claims** as `mixture`.
-
-This provides preliminary evidence that the adversarial PRO/CON architecture may be better suited than simple majority voting to representing conflicting or mixed evidence. However, the evidence-available subset contains only 17 claims, so this observation should be interpreted cautiously rather than as evidence of general superiority.
-
-### Citation validity
-
-Citation grounding was evaluated separately on all **17 evidence-bearing claims** for which the debate stage could run.
-
-| Citation metric                        |      Result |
-| -------------------------------------- | ----------: |
-| Evidence-bearing claims evaluated      |   **17/17** |
-| Total citation attempts                |     **181** |
-| Valid evidence-ID citations            |     **181** |
-| Invalid evidence-ID citations          |       **0** |
-| Citation validity                      | **100.00%** |
-| Dropped argument points                |       **2** |
-| Invalid citations surviving validation |       **0** |
-| Evaluation errors                      |       **0** |
-
-All **181 citation attempts** referenced valid evidence IDs, resulting in a citation-ID validity rate of **100%**. No invalid citation IDs survived the validation layer.
-
-This metric evaluates **citation-ID grounding**, i.e. whether an agent's citation refers to evidence that was actually available to the system. It does **not** establish that every cited source semantically entails or fully supports the associated argument. Semantic citation faithfulness would require a separate entailment-based or human evaluation.
-
-Two argument points were dropped by the citation-enforcement mechanism. `dropped_points` is reported separately from invalid citation IDs and should not be interpreted as two hallucinated citations.
-
-### Runtime
-
-For the final `n_runs=4` DebateCheck evaluation, the recorded end-to-end latency across all 101 claims was:
-
-- Mean latency: **4.50 seconds per claim**
-- Median latency: **1.22 seconds per claim**
-- Total recorded latency: **454.26 seconds**
-
-Because **84 of 101 claims** terminated after retrieval when no usable evidence was found, the overall mean understates the runtime of the complete multi-agent pipeline.
-
-Among the **17 evidence-bearing claims** that proceeded through retrieval, debate, and judging:
-
-- Mean end-to-end latency: **21.41 seconds per claim**
-- Median end-to-end latency: **18.53 seconds per claim**
-
-The difference between overall and evidence-bearing latency reflects the pipeline structure: no-evidence claims terminate early, whereas evidence-bearing claims require additional PRO/CON debate and four independent judge runs.
-
-API rate limits were encountered during development and batch evaluation. Evaluation scripts therefore use checkpointing and retry handling so completed claims are preserved and interrupted or rate-limited evaluations can resume safely.
-
-### API usage and cost
-
-Operational API usage was also recorded during the final evaluation period.
-
-| Provider / Service                      |              Observed usage | Observed monetary cost |
-| --------------------------------------- | --------------------------: | ---------------------: |
-| Groq — `openai/gpt-oss-120b`            | 81 requests / 284.2K tokens |          **$0.08 USD** |
-| Google Gemini — `gemini-3.5-flash-lite` |             Free-tier usage |          **$0.00 USD** |
-| PubMed / NCBI E-utilities               |                    Free API |          **$0.00 USD** |
-
-The observed Groq usage consisted of:
-
-- Cached input tokens: **16.1K**
-- Uncached input tokens: **175.8K**
-- Total input tokens: **191.9K**
-- Output tokens: **92.3K**
-- Total tokens: **284.2K**
-- Requests: **81**
-- Observed Groq charge: **$0.08 USD**
-
-Gemini was operated under its free tier during the evaluation, while PubMed retrieval used the free NCBI E-utilities service.
-
-The Groq dashboard statistics cover **all project activity recorded on 6 October 2026**, including development and evaluation calls, rather than exclusively the final 101-claim benchmark. Therefore, the $0.08 figure is reported as **observed project API expenditure**, not as an exact isolated benchmark cost or production cost per claim.
-
-### Evaluation files
-
-```text
-evaluation/
-├── data/
-│   └── pubhealth_eval_101.csv
-├── results/
-│   ├── baseline_results_101.csv
-│   ├── debatecheck_results_101_n_runs4.csv
-│   ├── model_comparison_101.csv
-│   ├── confusion_matrices_101.csv
-│   ├── evidence_subset_comparison_101.csv
-│   ├── citation_evaluation_101.csv
-│   └── api_cost_analysis.csv
-├── run_baseline.py
-├── retry_failed_baseline.py
-├── run_debatecheck_eval.py
-├── run_citation_eval.py
-├── compare_models.py
-└── analyze_api_cost.py
-```
-
-`compare_models.py` calculates the baseline-vs-DebateCheck performance metrics, confusion matrices, retrieval coverage, evidence-available subset performance, and latency statistics.
-
-`run_citation_eval.py` evaluates citation-ID grounding on evidence-bearing claims, including valid and invalid citation attempts, dropped argument points, and citations surviving validation.
-
-`analyze_api_cost.py` records and summarizes observed API usage and monetary cost from the final evaluation period.
-
-## Git workflow
-
-```bash
-git checkout main
-git pull
-git checkout -b personX-your-part
-# ...work, commit...
-git push -u origin personX-your-part
-# then open a pull request into main
-```
-
-## Live Deployment
-
-DebateCheck is publicly deployed on Render.
-
-**Live Web App:** https://debatecheck.onrender.com/
-
-**How to use:**
-1. Open the Live Web App URL above.
-2. Enter a health-related claim.
-3. Click **Check claim**.
-4. Explore the retrieved PubMed evidence, PRO/CON multi-agent debate, and final judge verdict.
-
-> **Note:** The application is hosted on Render's free tier. Initial loading may take approximately one minute after inactivity. Claim verification may take additional time due to evidence retrieval, AI processing, and API rate limits.
+- Evidence is limited to PubMed abstracts of up to 8 papers per claim, so relevant studies can be missed.
+  The relevance filter is lexical, so a paper that uses different vocabulary can be dropped.
+- A valid citation is not necessarily a faithful one. Every point cites a real snippet, but an agent can still
+  overstate it. This was not measured automatically.
+- The `humanize_text()` function in the frontend rewrites some agent wording for readability, which can
+  slightly change nuance.
+- "Unverifiable" results with no debate carry placeholder confidence and risk values and should be excluded
+  from judge-calibration analysis.
+- Groq's free tier is rate-limited, which can add waits of up to several minutes.
