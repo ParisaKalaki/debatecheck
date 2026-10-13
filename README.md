@@ -16,7 +16,7 @@ Team: Parisasadat Kalaki, Agam Singh Saini, Chenchira Bamrung, Ezgi Kemer Alp, S
 
 ## How it works
 
-![DebateCheck architecture](docs/architecture.png)
+![DebateCheck architecture](docs/architecture.jpg)
 
 Border colour shows the external service (blue: Gemini, green: PubMed, amber: Groq). Dashed arrows show
 fallbacks and evaluation. If no snippet supports or contradicts the claim, the debate and judge are skipped,
